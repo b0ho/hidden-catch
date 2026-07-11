@@ -14,7 +14,7 @@ const TIME_LIMIT_SECONDS = 180;
 const MISS_PENALTY_SECONDS = 5;
 const HINT_COUNT = 3;
 const HINT_DISPLAY_MS = 2200;
-const ZOOM_LEVELS = [1, 2, 3];
+const ZOOM_LEVELS = [1, 2, 4];
 /** Shared size + bottom offset for the joystick/찾기/확대 controls so they line up in one row. */
 const CONTROL_SIZE = 'h-16 w-16';
 const CONTROL_BOTTOM_STYLE = { bottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.375rem)' };
@@ -43,7 +43,10 @@ export function Stage() {
   const direction = useOrientation();
   const isTouchDevice = useIsTouchDevice();
 
-  const { position, facing, isWalking, moveTo, setInput } = useCharacterMovement(undefined, { aspectRatio });
+  const { position, facing, isWalking, moveTo, setInput } = useCharacterMovement(undefined, {
+    aspectRatio,
+    zoom: zoomLevel,
+  });
   useKeyboardInput(setInput);
 
   const stageInfo = stages.find((s) => s.id === stageId);
@@ -58,18 +61,25 @@ export function Stage() {
   positionRef.current = position;
   const aspectRatioRef = useRef(aspectRatio);
   aspectRatioRef.current = aspectRatio;
+  const zoomRef = useRef(zoomLevel);
+  zoomRef.current = zoomLevel;
 
   /** Checks a point against undiscovered diffs and marks any hit as found. Returns whether
    * a new diff was found — callers use this to apply the miss penalty. This is the only way
    * to register a find while walking via keyboard/joystick — merely passing over a spot no
-   * longer counts, only an explicit click or "찾기"/space press does. */
+   * longer counts, only an explicit click or "찾기"/space press does.
+   *
+   * The hit radius shrinks with zoom (in image-fraction terms) so that zooming in doesn't
+   * hand out a bigger *effective* on-screen target for free — the same screen-space precision
+   * is required at any zoom level, matching the slower movement speed while zoomed. */
   function checkHit(xFrac: number, yFrac: number): boolean {
     const currentMeta = metaRef.current;
     if (!currentMeta) return false;
     let foundNew = false;
     currentMeta.diffs.forEach((diff, index) => {
       if (foundRef.current.has(index)) return;
-      if (hitTest(xFrac, yFrac, diff, aspectRatioRef.current)) {
+      const scaledDiff = { ...diff, radius: diff.radius / zoomRef.current };
+      if (hitTest(xFrac, yFrac, scaledDiff, aspectRatioRef.current)) {
         foundNew = true;
         setFoundIndices((prev) => (prev.has(index) ? prev : new Set(prev).add(index)));
       }

@@ -13,11 +13,14 @@ const SPEED = 0.55;
 interface UseCharacterMovementOptions {
   /** Panel width / height, used so vertical speed matches horizontal speed visually. */
   aspectRatio?: number;
+  /** Current zoom level (1 = no zoom). Speed is divided by this, so movement is slower
+   * and more precise the more zoomed in the player is. */
+  zoom?: number;
 }
 
 export function useCharacterMovement(
   initial: CharacterPosition = DEFAULT_POSITION,
-  { aspectRatio = 1 }: UseCharacterMovementOptions = {},
+  { aspectRatio = 1, zoom = 1 }: UseCharacterMovementOptions = {},
 ) {
   const [position, setPosition] = useState<CharacterPosition>(initial);
   const [facing, setFacing] = useState<'left' | 'right'>('right');
@@ -27,10 +30,12 @@ export function useCharacterMovement(
   const targetRef = useRef<CharacterPosition | null>(null);
   const inputRef = useRef<{ dx: number; dy: number }>({ dx: 0, dy: 0 });
   const aspectRatioRef = useRef(aspectRatio);
+  const zoomRef = useRef(zoom);
   const lastTsRef = useRef<number | null>(null);
   const rafRef = useRef<number | null>(null);
 
   aspectRatioRef.current = aspectRatio;
+  zoomRef.current = zoom;
 
   useEffect(() => {
     function tick(ts: number) {
@@ -38,6 +43,7 @@ export function useCharacterMovement(
       const dt = Math.min((ts - last) / 1000, 0.05);
       lastTsRef.current = ts;
       const ratio = aspectRatioRef.current;
+      const speed = SPEED / zoomRef.current;
 
       const { dx: inputDx, dy: inputDy } = inputRef.current;
       let nx = positionRef.current.x;
@@ -47,14 +53,14 @@ export function useCharacterMovement(
       if (inputDx !== 0 || inputDy !== 0) {
         targetRef.current = null;
         const len = Math.hypot(inputDx, inputDy) || 1;
-        nx += (inputDx / len) * SPEED * dt;
-        ny += ((inputDy / len) * SPEED * dt) / ratio;
+        nx += (inputDx / len) * speed * dt;
+        ny += ((inputDy / len) * speed * dt) / ratio;
         moved = true;
       } else if (targetRef.current) {
         const dxT = targetRef.current.x - nx;
         const dyT = (targetRef.current.y - ny) * ratio;
         const dist = Math.hypot(dxT, dyT);
-        const step = SPEED * dt;
+        const step = speed * dt;
         if (dist <= step || dist === 0) {
           nx = targetRef.current.x;
           ny = targetRef.current.y;
