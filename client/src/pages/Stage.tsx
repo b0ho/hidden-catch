@@ -247,6 +247,17 @@ export function Stage() {
           <span className="font-display ink-panel shrink-0 rounded-full bg-cream px-2 py-1 text-xs text-ink sm:text-sm">
             🎯{foundIndices.size}/{total}
           </span>
+          {!isTouchDevice ? (
+            <button
+              onClick={() => setZoomLevel((z) => ZOOM_LEVELS[(ZOOM_LEVELS.indexOf(z) + 1) % ZOOM_LEVELS.length])}
+              disabled={cleared || failed}
+              className={`ink-btn font-display shrink-0 rounded-full px-2 py-1 text-xs text-ink disabled:text-ink/40 sm:text-sm ${
+                zoomLevel > 1 ? 'bg-lemon' : 'bg-cream'
+              }`}
+            >
+              🔎{zoomLevel}×
+            </button>
+          ) : null}
           <button
             onClick={handleHint}
             disabled={hintsLeft <= 0 || cleared || failed}
@@ -311,7 +322,7 @@ export function Stage() {
         </div>
       ) : null}
 
-      {!cleared && !failed ? (
+      {isTouchDevice && !cleared && !failed ? (
         <div className="fixed left-1/2 z-10 -translate-x-1/2" style={CONTROL_BOTTOM_STYLE}>
           <button
             onClick={() => setZoomLevel((z) => ZOOM_LEVELS[(ZOOM_LEVELS.indexOf(z) + 1) % ZOOM_LEVELS.length])}
@@ -324,7 +335,7 @@ export function Stage() {
         </div>
       ) : null}
 
-      {!cleared && !failed ? (
+      {isTouchDevice && !cleared && !failed ? (
         <div className="fixed right-2 z-10" style={CONTROL_BOTTOM_STYLE}>
           <button
             onClick={handleFind}
