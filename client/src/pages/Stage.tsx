@@ -14,6 +14,9 @@ const TIME_LIMIT_SECONDS = 180;
 const MISS_PENALTY_SECONDS = 5;
 const HINT_COUNT = 3;
 const HINT_DISPLAY_MS = 2200;
+/** Shared size + bottom offset for the joystick/찾기/확대 controls so they line up in one row. */
+const CONTROL_SIZE = 'h-16 w-16';
+const CONTROL_BOTTOM_STYLE = { bottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.375rem)' };
 
 function formatTime(seconds: number) {
   const m = Math.floor(seconds / 60);
@@ -35,6 +38,7 @@ export function Stage() {
   const [missMarker, setMissMarker] = useState<MissMarker | null>(null);
   const [hintsLeft, setHintsLeft] = useState(HINT_COUNT);
   const [hintTarget, setHintTarget] = useState<HintTarget | null>(null);
+  const [zoomed, setZoomed] = useState(false);
   const direction = useOrientation();
   const isTouchDevice = useIsTouchDevice();
 
@@ -131,6 +135,7 @@ export function Stage() {
     setMissMarker(null);
     setHintsLeft(HINT_COUNT);
     setHintTarget(null);
+    setZoomed(false);
 
     fetch(`/stages/${stageId}/meta.json`)
       .then((res) => res.json())
@@ -238,6 +243,7 @@ export function Stage() {
             alt="원본 그림"
             label="원본"
             aspectRatio={aspectRatio}
+            zoomed={zoomed}
           />
           <ImagePanel
             src={`/stages/${stageId}/modified.jpg`}
@@ -256,6 +262,7 @@ export function Stage() {
             characterWalking={isWalking}
             missMarker={missMarker}
             hintTarget={hintTarget}
+            zoomed={zoomed}
             onPanelClick={handlePanelClick}
           />
         </div>
@@ -271,19 +278,29 @@ export function Stage() {
       </div>
 
       {isTouchDevice && !cleared && !failed ? (
-        <div
-          className="fixed left-2 z-10"
-          style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.375rem)' }}
-        >
+        <div className="fixed left-2 z-10" style={CONTROL_BOTTOM_STYLE}>
           <VirtualJoystick onChange={setInput} />
         </div>
       ) : null}
 
       {!cleared && !failed ? (
-        <div className="fixed bottom-4 right-4 z-10 sm:bottom-6 sm:right-6">
+        <div className="fixed left-1/2 z-10 -translate-x-1/2" style={CONTROL_BOTTOM_STYLE}>
+          <button
+            onClick={() => setZoomed((z) => !z)}
+            className={`ink-btn font-display ${CONTROL_SIZE} rounded-full text-base text-ink ${
+              zoomed ? 'bg-lemon' : 'bg-cream'
+            }`}
+          >
+            {zoomed ? '1×' : '2×'}
+          </button>
+        </div>
+      ) : null}
+
+      {!cleared && !failed ? (
+        <div className="fixed right-2 z-10" style={CONTROL_BOTTOM_STYLE}>
           <button
             onClick={handleFind}
-            className="ink-btn font-display h-20 w-20 rounded-full bg-mint text-lg text-ink sm:h-24 sm:w-24 sm:text-xl"
+            className={`ink-btn font-display ${CONTROL_SIZE} rounded-full bg-mint text-lg text-ink`}
           >
             찾기
           </button>
