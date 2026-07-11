@@ -33,6 +33,14 @@ interface ImagePanelProps {
   hintTarget?: HintTarget | null;
   /** 1 = no zoom. 2/3 render the image content at that multiple inside a scrollable viewport. */
   zoom?: number;
+  /** 'width' (default) sizes the panel to the row's width, height follows from aspect-ratio —
+   * right for a stacked/portrait layout. 'height' sizes it to the available height instead,
+   * width follows — right for a side-by-side row where height is the scarce dimension. */
+  fit?: 'width' | 'height';
+  /** Explicit pixel box for fit="height", computed by the parent so the panel never overflows
+   * either the row's height OR its share of the row's width (a "contain" fit CSS alone can't
+   * express cleanly for a non-replaced element with padding/border). */
+  computedSize?: { width: number; height: number } | null;
   onPanelClick?: (xFrac: number, yFrac: number) => void;
 }
 
@@ -50,6 +58,8 @@ export function ImagePanel({
   missMarker,
   hintTarget,
   zoom = 1,
+  fit = 'width',
+  computedSize,
   onPanelClick,
 }: ImagePanelProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -82,18 +92,24 @@ export function ImagePanel({
     onPanelClick(xFrac, yFrac);
   }
 
+  // fit="height" with a computed pixel box: the frame gets an explicit size (guaranteed to fit
+  // both the row's height and this panel's share of its width), and the viewport just fills it —
+  // no aspect-ratio needed there since the box's own ratio already matches the image.
+  const usePixelBox = fit === 'height' && computedSize;
+  const outerClass = usePixelBox ? 'flex flex-col items-center' : `flex min-w-0 flex-col items-center ${fit === 'height' ? 'h-full' : 'flex-1'}`;
+  const frameClass = usePixelBox
+    ? 'ink-panel relative select-none overflow-hidden rounded-xl bg-cream p-1.5'
+    : `ink-panel relative select-none overflow-hidden rounded-xl bg-cream p-1.5 ${fit === 'height' ? 'h-full w-auto' : 'w-full min-w-0'}`;
+  const frameStyle = usePixelBox ? { width: computedSize.width, height: computedSize.height } : undefined;
+  const viewportClass = usePixelBox
+    ? `relative h-full w-full rounded-md ${zoomed ? 'overflow-auto' : 'overflow-hidden'}`
+    : `relative rounded-md ${fit === 'height' ? 'h-full w-auto' : 'w-full min-w-0'} ${zoomed ? 'overflow-auto' : 'overflow-hidden'}`;
+  const viewportStyle = usePixelBox ? undefined : { aspectRatio };
+
   return (
-    <div className="flex flex-1 min-w-0 flex-col items-center">
-      <div
-        aria-label={label}
-        className={`ink-panel relative w-full select-none overflow-hidden rounded-xl bg-cream p-1.5 ${interactive ? 'cursor-crosshair' : ''}`}
-      >
-        <div
-          ref={containerRef}
-          onClick={handleClick}
-          className={`relative w-full rounded-md ${zoomed ? 'overflow-auto' : 'overflow-hidden'}`}
-          style={{ aspectRatio }}
-        >
+    <div className={outerClass}>
+      <div aria-label={label} className={`${frameClass} ${interactive ? 'cursor-crosshair' : ''}`} style={frameStyle}>
+        <div ref={containerRef} onClick={handleClick} className={viewportClass} style={viewportStyle}>
           <div className="relative" style={{ width: `${zoom * 100}%`, height: `${zoom * 100}%` }}>
             <img
               src={src}

@@ -42,6 +42,41 @@ export function Stage() {
   const [zoomLevel, setZoomLevel] = useState(1);
   const direction = useOrientation();
   const isTouchDevice = useIsTouchDevice();
+  const isRow = direction === 'row';
+
+  // In row layout, each panel must fit within BOTH its share of the row's width and the row's
+  // full height — whichever is tighter. A pure-CSS "contain" fit for a bordered/padded, non-
+  // replaced box doesn't express that cleanly, so the row's box is measured and the panel size
+  // computed directly: pick the width-derived-from-height box, but clamp it to the width slot.
+  const panelsRowRef = useRef<HTMLDivElement>(null);
+  const [rowBox, setRowBox] = useState<{ width: number; height: number } | null>(null);
+
+  useEffect(() => {
+    if (!isRow) {
+      setRowBox(null);
+      return;
+    }
+    const el = panelsRowRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (!entry) return;
+      setRowBox({ width: entry.contentRect.width, height: entry.contentRect.height });
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [isRow]);
+
+  const computedPanelSize = (() => {
+    if (!isRow || !rowBox) return null;
+    const GAP = 12;
+    const slotWidth = (rowBox.width - GAP) / 2;
+    const heightFromWidth = slotWidth / aspectRatio;
+    if (heightFromWidth <= rowBox.height) {
+      return { width: slotWidth, height: heightFromWidth };
+    }
+    return { width: rowBox.height * aspectRatio, height: rowBox.height };
+  })();
 
   const { position, facing, isWalking, moveTo, setInput } = useCharacterMovement(undefined, {
     aspectRatio,
@@ -210,7 +245,11 @@ export function Stage() {
   const barColor = timeLeft <= 30 ? 'bg-bubblegum' : timeLeft <= 90 ? 'bg-lemon' : 'bg-mint';
 
   return (
-    <div className="arcade-sky relative flex min-h-screen flex-col overflow-hidden px-3 py-4 sm:px-4 sm:py-6">
+    <div
+      className={`arcade-sky relative flex flex-col overflow-hidden px-3 py-4 sm:px-4 sm:py-6 ${
+        isRow ? 'h-screen' : 'min-h-screen'
+      }`}
+    >
       {missMarker ? (
         <div
           key={missMarker.nonce}
@@ -218,8 +257,10 @@ export function Stage() {
         />
       ) : null}
 
-      <div className="relative mx-auto flex w-full max-w-5xl flex-col gap-2">
-        <header className="flex flex-nowrap items-center justify-between gap-1 overflow-x-auto">
+      <div
+        className={`relative mx-auto flex w-full max-w-5xl flex-col gap-2 ${isRow ? 'min-h-0 flex-1' : ''}`}
+      >
+        <header className="flex shrink-0 flex-nowrap items-center justify-between gap-1 overflow-x-auto">
           <Link
             to="/"
             className="font-display ink-panel shrink-0 rounded-full bg-cream px-2 py-1 text-xs text-ink"
@@ -248,7 +289,12 @@ export function Stage() {
           </button>
         </header>
 
-        <div className={`flex gap-2 sm:gap-3 ${direction === 'stack' ? 'flex-col' : 'flex-row'}`}>
+        <div
+          ref={panelsRowRef}
+          className={`flex gap-2 sm:gap-3 ${
+            isRow ? 'min-h-0 flex-1 flex-row items-stretch justify-center' : 'flex-col'
+          }`}
+        >
           <ImagePanel
             src={`/stages/${stageId}/original.jpg`}
             alt="원본 그림"
@@ -256,6 +302,8 @@ export function Stage() {
             aspectRatio={aspectRatio}
             zoom={zoomLevel}
             characterPosition={position}
+            fit={isRow ? 'height' : 'width'}
+            computedSize={computedPanelSize}
           />
           <ImagePanel
             src={`/stages/${stageId}/modified.jpg`}
@@ -275,12 +323,14 @@ export function Stage() {
             missMarker={missMarker}
             hintTarget={hintTarget}
             zoom={zoomLevel}
+            fit={isRow ? 'height' : 'width'}
+            computedSize={computedPanelSize}
             onPanelClick={handlePanelClick}
           />
         </div>
       </div>
 
-      <div className="relative z-10 mx-auto mt-4 w-full max-w-5xl px-1">
+      <div className="relative z-10 mx-auto mt-2 w-full max-w-5xl shrink-0 px-1 sm:mt-4">
         <div className="ink-panel h-4 w-full overflow-hidden rounded-full bg-cream">
           <div
             className={`h-full transition-[width] duration-1000 ease-linear ${barColor}`}
