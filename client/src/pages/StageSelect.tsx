@@ -1,26 +1,43 @@
 import { Link } from 'react-router-dom';
 import { stages } from '../data/stages';
 
+const CARD_TILTS = ['-rotate-2', 'rotate-1', '-rotate-1', 'rotate-2', '-rotate-2', 'rotate-1'];
+
 export function StageSelect() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-sky-900 to-slate-900 px-4 py-8 text-white">
-      <div className="mx-auto max-w-3xl">
-        <h1 className="mb-1 text-center text-3xl font-bold">히든캐치</h1>
-        <p className="mb-8 text-center text-white/70">스테이지를 선택하세요</p>
+    <div className="arcade-sky relative min-h-screen overflow-hidden px-4 py-10">
+      <div className="arcade-cloud h-16 w-40" style={{ top: '6%', left: '-4%' }} />
+      <div className="arcade-cloud h-20 w-56" style={{ top: '14%', right: '-6%', animationDelay: '-4s' }} />
+      <div className="arcade-cloud h-12 w-32" style={{ top: '30%', left: '55%', animationDelay: '-9s' }} />
 
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
-          {stages.map((stage) => (
+      <div className="relative mx-auto max-w-3xl">
+        <div className="mb-10 flex flex-col items-center">
+          <h1
+            className="font-display ink-text animate-marquee-glow -rotate-1 rounded-full bg-bubblegum px-8 py-3 text-4xl text-white sm:text-5xl"
+            style={{ WebkitTextStrokeWidth: '2.5px' }}
+          >
+            히든캐치
+          </h1>
+          <p className="font-display ink-panel mt-4 rotate-1 rounded-full bg-cream px-4 py-1 text-sm text-ink">
+            스테이지를 골라 틀린 그림을 찾아보세요!
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
+          {stages.map((stage, index) => (
             <Link
               key={stage.id}
               to={`/stage/${stage.id}`}
-              className="group overflow-hidden rounded-2xl bg-slate-800 shadow-lg ring-1 ring-white/10 transition hover:ring-white/40"
+              className={`ink-panel group block ${CARD_TILTS[index % CARD_TILTS.length]} rounded-2xl bg-cream p-3 pb-4 transition-transform duration-150 hover:rotate-0 hover:-translate-y-1 active:translate-y-0`}
             >
-              <img
-                src={stage.thumbnail}
-                alt={stage.title}
-                className="aspect-[3/2] w-full object-cover transition group-hover:scale-105"
-              />
-              <div className="px-4 py-3 text-center font-semibold">{stage.title}</div>
+              <div className="ink-panel overflow-hidden rounded-lg">
+                <img
+                  src={stage.thumbnail}
+                  alt={stage.title}
+                  className="aspect-[3/2] w-full object-cover transition duration-200 group-hover:scale-105"
+                />
+              </div>
+              <div className="font-display pt-2 text-center text-lg text-ink">{stage.title}</div>
             </Link>
           ))}
         </div>

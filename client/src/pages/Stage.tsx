@@ -145,13 +145,13 @@ export function Stage() {
 
   if (!stageId || !stageInfo) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-900 text-white">
-        <p>
-          존재하지 않는 스테이지입니다.{' '}
-          <Link to="/" className="underline">
+      <div className="arcade-sky flex min-h-screen items-center justify-center px-4">
+        <div className="ink-panel font-display rounded-2xl bg-cream p-6 text-center text-ink">
+          <p className="mb-4">존재하지 않는 스테이지입니다.</p>
+          <Link to="/" className="ink-btn inline-block rounded-full bg-mint px-4 py-2">
             돌아가기
           </Link>
-        </p>
+        </div>
       </div>
     );
   }
@@ -161,43 +161,61 @@ export function Stage() {
     attemptFind(xFrac, yFrac);
   }
 
+  const timeRatio = timeLeft / TIME_LIMIT_SECONDS;
+  const barColor = timeLeft <= 30 ? 'bg-bubblegum' : timeLeft <= 90 ? 'bg-lemon' : 'bg-mint';
+
   return (
-    <div className="flex min-h-screen flex-col bg-gradient-to-b from-sky-900 to-slate-900 px-4 py-4 text-white sm:py-8">
+    <div className="arcade-sky relative flex min-h-screen flex-col overflow-hidden px-3 py-4 sm:px-4 sm:py-6">
       {missMarker ? (
         <div
           key={missMarker.nonce}
-          className="animate-miss-flash pointer-events-none fixed inset-0 z-20 bg-red-600"
+          className="animate-miss-flash pointer-events-none fixed inset-0 z-20 bg-bubblegum-deep"
         />
       ) : null}
 
-      <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4">
-        <header className="flex items-center justify-between">
-          <Link to="/" className="text-sm text-white/70 hover:text-white">
-            ← 스테이지 목록
+      <div className="relative mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4">
+        <header className="flex flex-wrap items-center justify-between gap-2">
+          <Link
+            to="/"
+            className="font-display ink-panel rounded-full bg-cream px-3 py-1 text-xs text-ink sm:text-sm"
+          >
+            ◀ 목록
           </Link>
-          <h1 className="text-lg font-bold sm:text-xl">{stageInfo.title}</h1>
-          <div className="flex flex-col items-end text-sm font-semibold">
-            <span className={timeLeft <= 30 ? 'text-red-400' : ''}>{formatTime(timeLeft)}</span>
-            <span>{foundIndices.size} / {total}</span>
+          <h1 className="font-display ink-text -rotate-1 rounded-full bg-bubblegum px-4 py-1 text-lg text-white sm:text-xl">
+            {stageInfo.title}
+          </h1>
+          <div className="flex items-center gap-2">
+            <span
+              className={`font-display ink-panel rounded-full px-3 py-1 text-sm text-ink sm:text-base ${
+                timeLeft <= 30 ? 'bg-bubblegum text-white' : 'bg-cream'
+              }`}
+            >
+              ⏱️ {formatTime(timeLeft)}
+            </span>
+            <span className="font-display ink-panel rounded-full bg-cream px-3 py-1 text-sm text-ink sm:text-base">
+              🔍 {foundIndices.size}/{total}
+            </span>
           </div>
         </header>
 
-        <div className={`flex flex-1 gap-4 ${direction === 'stack' ? 'flex-col' : 'flex-row'}`}>
+        <div className={`flex flex-1 gap-5 sm:gap-6 ${direction === 'stack' ? 'flex-col' : 'flex-row'}`}>
           <ImagePanel
             src={`/stages/${stageId}/original.jpg`}
             alt="원본 그림"
             label="원본"
             aspectRatio={aspectRatio}
+            tilt="left"
           />
           <ImagePanel
             src={`/stages/${stageId}/modified.jpg`}
             alt="다른 부분을 찾아 클릭하세요"
             label={
               isTouchDevice
-                ? '다른 그림 (터치로 클릭 이동, 조이스틱+찾기 버튼으로 걷기)'
-                : '다른 그림 (클릭으로 바로 찾기, 방향키+Space로 걷다가 찾기)'
+                ? '터치로 이동 · 조이스틱+찾기로 걷다 찾기'
+                : '클릭으로 바로 찾기 · 방향키+Space로 걷다 찾기'
             }
             aspectRatio={aspectRatio}
+            tilt="right"
             interactive
             diffs={meta?.diffs}
             foundIndices={foundIndices}
@@ -210,13 +228,13 @@ export function Stage() {
         </div>
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-10 h-2.5 bg-white/10">
-        <div
-          className={`h-full transition-[width] duration-1000 ease-linear ${
-            timeLeft <= 30 ? 'bg-red-500' : timeLeft <= 90 ? 'bg-amber-400' : 'bg-emerald-400'
-          }`}
-          style={{ width: `${(timeLeft / TIME_LIMIT_SECONDS) * 100}%` }}
-        />
+      <div className="relative z-10 mx-auto mt-4 w-full max-w-5xl px-1">
+        <div className="ink-panel h-4 w-full overflow-hidden rounded-full bg-cream">
+          <div
+            className={`h-full transition-[width] duration-1000 ease-linear ${barColor}`}
+            style={{ width: `${timeRatio * 100}%` }}
+          />
+        </div>
       </div>
 
       {isTouchDevice && !cleared && !failed ? (
@@ -229,7 +247,7 @@ export function Stage() {
         <div className="fixed bottom-6 right-6 z-10">
           <button
             onClick={handleFind}
-            className="h-24 w-24 rounded-full bg-emerald-500/90 text-lg font-bold text-white shadow-lg ring-2 ring-white/30 active:scale-95"
+            className="ink-btn font-display h-24 w-24 rounded-full bg-mint text-xl text-ink"
           >
             찾기
           </button>
@@ -237,17 +255,17 @@ export function Stage() {
       ) : null}
 
       {cleared ? (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/70 px-4">
-          <div className="w-full max-w-sm rounded-2xl bg-slate-800 p-6 text-center shadow-2xl">
-            <p className="mb-1 text-2xl font-bold">🎉 클리어!</p>
-            <p className="mb-6 text-white/70">모든 다른 부분을 찾았습니다. (남은 시간 {formatTime(timeLeft)})</p>
+        <div className="fixed inset-0 z-30 flex items-center justify-center bg-ink/60 px-4">
+          <div className="ink-panel w-full max-w-sm rounded-2xl bg-cream p-6 text-center">
+            <p className="font-display mb-1 text-3xl text-ink">🎉 클리어!</p>
+            <p className="mb-6 text-ink/70">모든 다른 부분을 찾았습니다. (남은 시간 {formatTime(timeLeft)})</p>
             <div className="flex justify-center gap-3">
-              <Link to="/" className="rounded-lg bg-white/10 px-4 py-2 font-medium hover:bg-white/20">
+              <Link to="/" className="ink-btn font-display rounded-full bg-cream px-4 py-2 text-ink">
                 목록으로
               </Link>
               <button
                 onClick={handleRetry}
-                className="rounded-lg bg-emerald-500 px-4 py-2 font-medium hover:bg-emerald-400"
+                className="ink-btn font-display rounded-full bg-mint px-4 py-2 text-ink"
               >
                 다시 플레이
               </button>
@@ -257,19 +275,19 @@ export function Stage() {
       ) : null}
 
       {failed ? (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/70 px-4">
-          <div className="w-full max-w-sm rounded-2xl bg-slate-800 p-6 text-center shadow-2xl">
-            <p className="mb-1 text-2xl font-bold">⏱️ 시간 초과!</p>
-            <p className="mb-6 text-white/70">
+        <div className="fixed inset-0 z-30 flex items-center justify-center bg-ink/60 px-4">
+          <div className="ink-panel w-full max-w-sm rounded-2xl bg-cream p-6 text-center">
+            <p className="font-display mb-1 text-3xl text-ink">⏱️ 시간 초과!</p>
+            <p className="mb-6 text-ink/70">
               시간 안에 다 찾지 못했습니다 ({foundIndices.size} / {total}). 다시 도전해보세요.
             </p>
             <div className="flex justify-center gap-3">
-              <Link to="/" className="rounded-lg bg-white/10 px-4 py-2 font-medium hover:bg-white/20">
+              <Link to="/" className="ink-btn font-display rounded-full bg-cream px-4 py-2 text-ink">
                 목록으로
               </Link>
               <button
                 onClick={handleRetry}
-                className="rounded-lg bg-emerald-500 px-4 py-2 font-medium hover:bg-emerald-400"
+                className="ink-btn font-display rounded-full bg-bubblegum px-4 py-2 text-white"
               >
                 다시 시도
               </button>

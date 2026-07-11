@@ -1,7 +1,22 @@
+@import url('https://fonts.googleapis.com/css2?family=Jua&display=swap');
 @import 'tailwindcss';
 
+@theme {
+  --color-ink: #1f2a55;
+  --color-sky: #7fd1ff;
+  --color-sky-deep: #2f8fe0;
+  --color-bubblegum: #ff5c97;
+  --color-bubblegum-deep: #d63d76;
+  --color-lemon: #ffd23f;
+  --color-lemon-deep: #e0a800;
+  --color-cream: #fffbf0;
+  --color-mint: #33d6a6;
+  --color-mint-deep: #1fae85;
+  --font-display: 'Jua', 'Apple SD Gothic Neo', sans-serif;
+}
+
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
 }
 
 body {
@@ -11,6 +26,64 @@ body {
 #root {
   min-height: 100svh;
 }
+
+/* ---------- Arcade sky backdrop ---------- */
+
+.arcade-sky {
+  background:
+    radial-gradient(ellipse 60% 40% at 20% 15%, rgba(255, 255, 255, 0.55), transparent 60%),
+    radial-gradient(ellipse 50% 35% at 85% 10%, rgba(255, 255, 255, 0.4), transparent 60%),
+    linear-gradient(180deg, var(--color-sky) 0%, var(--color-sky-deep) 100%);
+}
+
+@keyframes drift {
+  0% {
+    transform: translateX(-8%);
+  }
+  100% {
+    transform: translateX(8%);
+  }
+}
+
+.arcade-cloud {
+  position: absolute;
+  border-radius: 999px;
+  background: #ffffff;
+  opacity: 0.55;
+  filter: blur(0.5px);
+  animation: drift 14s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+/* ---------- Ink-outline "sticker" treatment ---------- */
+
+.ink-panel {
+  border: 3px solid var(--color-ink);
+  box-shadow: 5px 5px 0 var(--color-ink);
+}
+
+.ink-btn {
+  border: 3px solid var(--color-ink);
+  border-bottom-width: 6px;
+  box-shadow: 3px 3px 0 var(--color-ink);
+  transition:
+    transform 0.08s ease,
+    border-bottom-width 0.08s ease,
+    box-shadow 0.08s ease;
+}
+
+.ink-btn:active {
+  transform: translateY(3px);
+  border-bottom-width: 3px;
+  box-shadow: 1px 1px 0 var(--color-ink);
+}
+
+.ink-text {
+  -webkit-text-stroke: 2px var(--color-ink);
+  paint-order: stroke fill;
+}
+
+/* ---------- Character & feedback motion ---------- */
 
 @keyframes breathe {
   0%,
@@ -57,12 +130,22 @@ body {
 
 @keyframes miss-toast {
   0% {
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
     opacity: 1;
   }
   100% {
-    transform: translateY(-10px);
+    transform: translateY(-16px) scale(1.15);
     opacity: 0;
+  }
+}
+
+@keyframes marquee-glow {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 6px rgba(255, 210, 63, 0.7));
+  }
+  50% {
+    filter: drop-shadow(0 0 14px rgba(255, 210, 63, 0.95));
   }
 }
 
@@ -86,4 +169,8 @@ body {
 
 .animate-miss-toast {
   animation: miss-toast 0.8s ease-out forwards;
+}
+
+.animate-marquee-glow {
+  animation: marquee-glow 2.2s ease-in-out infinite;
 }

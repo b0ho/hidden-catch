@@ -22,6 +22,8 @@ interface ImagePanelProps {
   characterFacing?: 'left' | 'right';
   characterWalking?: boolean;
   missMarker?: MissMarker | null;
+  /** Slight tilt so the two panels read as two photos laid on a table, not two <div>s in a flex row. */
+  tilt?: 'left' | 'right';
   onPanelClick?: (xFrac: number, yFrac: number) => void;
 }
 
@@ -37,10 +39,12 @@ export function ImagePanel({
   characterFacing = 'right',
   characterWalking = false,
   missMarker,
+  tilt = 'left',
   onPanelClick,
 }: ImagePanelProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const found = foundIndices ?? new Set<number>();
+  const tiltClass = tilt === 'left' ? '-rotate-1' : 'rotate-1';
 
   function handleClick(event: React.MouseEvent<HTMLDivElement>) {
     if (!interactive || !onPanelClick || !containerRef.current) return;
@@ -51,65 +55,69 @@ export function ImagePanel({
   }
 
   return (
-    <div className="flex flex-1 min-w-0 flex-col gap-1">
-      <span className="text-center text-xs font-medium text-white/80 sm:text-sm">{label}</span>
+    <div className={`flex flex-1 min-w-0 flex-col items-center gap-2 ${tiltClass}`}>
+      <span className="font-display ink-panel rounded-full bg-cream px-3 py-0.5 text-center text-[11px] text-ink sm:text-xs">
+        {label}
+      </span>
       <div
         ref={containerRef}
         onClick={handleClick}
-        className={`relative w-full select-none overflow-hidden rounded-xl bg-slate-800 ${interactive ? 'cursor-crosshair' : ''}`}
-        style={{ aspectRatio }}
+        className={`ink-panel relative w-full select-none overflow-hidden rounded-xl bg-cream p-1.5 ${interactive ? 'cursor-crosshair' : ''}`}
       >
-        <img
-          src={src}
-          alt={alt}
-          className="pointer-events-none absolute inset-0 h-full w-full object-cover"
-          draggable={false}
-        />
+        <div className="relative w-full overflow-hidden rounded-md" style={{ aspectRatio }}>
+          <img
+            src={src}
+            alt={alt}
+            className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+            draggable={false}
+          />
 
-        {diffs.map((diff, index) =>
-          found.has(index) ? (
+          {diffs.map((diff, index) =>
+            found.has(index) ? (
+              <div
+                key={index}
+                className="absolute rounded-full border-4 border-mint"
+                style={{
+                  left: `${diff.x * 100}%`,
+                  top: `${diff.y * 100}%`,
+                  width: `${diff.radius * 2 * 100}%`,
+                  aspectRatio: 1,
+                  transform: 'translate(-50%, -50%)',
+                }}
+              >
+                <div className="animate-found-pulse absolute inset-0 rounded-full bg-mint" />
+              </div>
+            ) : null,
+          )}
+
+          {missMarker ? (
             <div
-              key={index}
-              className="absolute rounded-full border-4 border-emerald-400"
+              key={missMarker.nonce}
+              className="font-display animate-miss-toast ink-text pointer-events-none absolute text-red-500"
               style={{
-                left: `${diff.x * 100}%`,
-                top: `${diff.y * 100}%`,
-                width: `${diff.radius * 2 * 100}%`,
-                aspectRatio: 1,
+                left: `${missMarker.x * 100}%`,
+                top: `${missMarker.y * 100}%`,
                 transform: 'translate(-50%, -50%)',
+                WebkitTextStrokeWidth: '1.5px',
               }}
             >
-              <div className="animate-found-pulse absolute inset-0 rounded-full bg-emerald-400" />
+              -5초
             </div>
-          ) : null,
-        )}
+          ) : null}
 
-        {missMarker ? (
-          <div
-            key={missMarker.nonce}
-            className="animate-miss-toast pointer-events-none absolute font-bold text-red-400 drop-shadow-md"
-            style={{
-              left: `${missMarker.x * 100}%`,
-              top: `${missMarker.y * 100}%`,
-              transform: 'translate(-50%, -50%)',
-            }}
-          >
-            -5초
-          </div>
-        ) : null}
-
-        {interactive && characterPosition ? (
-          <div
-            className="absolute"
-            style={{
-              left: `${characterPosition.x * 100}%`,
-              top: `${characterPosition.y * 100}%`,
-              transform: 'translate(-50%, -85%)',
-            }}
-          >
-            <Character facing={characterFacing} isWalking={characterWalking} />
-          </div>
-        ) : null}
+          {interactive && characterPosition ? (
+            <div
+              className="absolute"
+              style={{
+                left: `${characterPosition.x * 100}%`,
+                top: `${characterPosition.y * 100}%`,
+                transform: 'translate(-50%, -85%)',
+              }}
+            >
+              <Character facing={characterFacing} isWalking={characterWalking} />
+            </div>
+          ) : null}
+        </div>
       </div>
     </div>
   );

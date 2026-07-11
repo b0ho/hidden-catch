@@ -25,23 +25,23 @@ export function Character({ facing, isWalking, color = '#ff6b6b' }: CharacterPro
           <ellipse cx="50" cy="94" rx="22" ry="5" fill="#000000" opacity="0.18" />
 
           {/* legs */}
-          <ellipse cx="38" cy="86" rx="8" ry="6" fill={color} />
-          <ellipse cx="62" cy="86" rx="8" ry="6" fill={color} />
+          <ellipse cx="38" cy="86" rx="8" ry="6" fill={color} stroke="#1f2a55" strokeWidth="2.5" />
+          <ellipse cx="62" cy="86" rx="8" ry="6" fill={color} stroke="#1f2a55" strokeWidth="2.5" />
 
           {/* arms */}
-          <ellipse cx="16" cy="58" rx="9" ry="7" fill={color} />
-          <ellipse cx="84" cy="58" rx="9" ry="7" fill={color} />
+          <ellipse cx="16" cy="58" rx="9" ry="7" fill={color} stroke="#1f2a55" strokeWidth="2.5" />
+          <ellipse cx="84" cy="58" rx="9" ry="7" fill={color} stroke="#1f2a55" strokeWidth="2.5" />
 
           {/* body */}
-          <circle cx="50" cy="52" r="38" fill="url(#bodyGradient)" />
+          <circle cx="50" cy="52" r="38" fill="url(#bodyGradient)" stroke="#1f2a55" strokeWidth="3" />
 
           {/* cheeks */}
           <ellipse cx="30" cy="60" rx="7" ry="5" fill="#ffffff" opacity="0.35" />
           <ellipse cx="70" cy="60" rx="7" ry="5" fill="#ffffff" opacity="0.35" />
 
           {/* eyes */}
-          <circle cx="36" cy="46" r="8" fill="#ffffff" />
-          <circle cx="64" cy="46" r="8" fill="#ffffff" />
+          <circle cx="36" cy="46" r="8" fill="#ffffff" stroke="#1f2a55" strokeWidth="2" />
+          <circle cx="64" cy="46" r="8" fill="#ffffff" stroke="#1f2a55" strokeWidth="2" />
           <circle cx="38" cy="47" r="4" fill="#2b2b2b" />
           <circle cx="66" cy="47" r="4" fill="#2b2b2b" />
           <circle cx="39.5" cy="45.5" r="1.3" fill="#ffffff" />
@@ -50,7 +50,7 @@ export function Character({ facing, isWalking, color = '#ff6b6b' }: CharacterPro
           {/* smile */}
           <path
             d="M 40 62 Q 50 70 60 62"
-            stroke="#2b2b2b"
+            stroke="#1f2a55"
             strokeWidth="2.5"
             fill="none"
             strokeLinecap="round"

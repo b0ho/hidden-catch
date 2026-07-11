@@ -53,13 +53,13 @@ export function VirtualJoystick({ onChange }: VirtualJoystickProps) {
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
-      className="relative h-24 w-24 touch-none select-none rounded-full bg-white/10 ring-1 ring-white/25 backdrop-blur-sm"
+      className="ink-panel relative h-24 w-24 touch-none select-none rounded-full bg-sky/70 backdrop-blur-sm"
       aria-label="이동 조이스틱"
       role="slider"
       aria-valuenow={0}
     >
       <div
-        className="absolute left-1/2 top-1/2 h-10 w-10 rounded-full bg-white/80 shadow-lg transition-transform duration-75"
+        className="ink-panel absolute left-1/2 top-1/2 h-10 w-10 rounded-full bg-lemon transition-transform duration-75"
         style={{ transform: `translate(-50%, -50%) translate(${knob.x}px, ${knob.y}px)` }}
       />
     </div>
