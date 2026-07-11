@@ -31,8 +31,6 @@ interface ImagePanelProps {
   characterWalking?: boolean;
   missMarker?: MissMarker | null;
   hintTarget?: HintTarget | null;
-  /** Slight tilt so the two panels read as two photos laid on a table, not two <div>s in a flex row. */
-  tilt?: 'left' | 'right';
   onPanelClick?: (xFrac: number, yFrac: number) => void;
 }
 
@@ -49,12 +47,10 @@ export function ImagePanel({
   characterWalking = false,
   missMarker,
   hintTarget,
-  tilt = 'left',
   onPanelClick,
 }: ImagePanelProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const found = foundIndices ?? new Set<number>();
-  const tiltClass = tilt === 'left' ? '-rotate-1' : 'rotate-1';
 
   function handleClick(event: React.MouseEvent<HTMLDivElement>) {
     if (!interactive || !onPanelClick || !containerRef.current) return;
@@ -65,7 +61,7 @@ export function ImagePanel({
   }
 
   return (
-    <div className={`flex flex-1 min-w-0 flex-col items-center ${tiltClass}`}>
+    <div className="flex flex-1 min-w-0 flex-col items-center">
       <div
         ref={containerRef}
         onClick={handleClick}

@@ -1,8 +1,6 @@
 import { Link } from 'react-router-dom';
 import { stages } from '../data/stages';
 
-const CARD_TILTS = ['-rotate-2', 'rotate-1', '-rotate-1', 'rotate-2', '-rotate-2', 'rotate-1'];
-
 export function StageSelect() {
   return (
     <div className="arcade-sky relative min-h-screen overflow-hidden px-4 py-10">
@@ -13,22 +11,22 @@ export function StageSelect() {
       <div className="relative mx-auto max-w-3xl">
         <div className="mb-10 flex flex-col items-center">
           <h1
-            className="font-display ink-text animate-marquee-glow -rotate-1 rounded-full bg-bubblegum px-8 py-3 text-4xl text-white sm:text-5xl"
+            className="font-display ink-text animate-marquee-glow rounded-full bg-bubblegum px-8 py-3 text-4xl text-white sm:text-5xl"
             style={{ WebkitTextStrokeWidth: '2.5px' }}
           >
             히든캐치
           </h1>
-          <p className="font-display ink-panel mt-4 rotate-1 rounded-full bg-cream px-4 py-1 text-sm text-ink">
+          <p className="font-display ink-panel mt-4 rounded-full bg-cream px-4 py-1 text-sm text-ink">
             스테이지를 골라 틀린 그림을 찾아보세요!
           </p>
         </div>
 
         <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
-          {stages.map((stage, index) => (
+          {stages.map((stage) => (
             <Link
               key={stage.id}
               to={`/stage/${stage.id}`}
-              className={`ink-panel group block ${CARD_TILTS[index % CARD_TILTS.length]} rounded-2xl bg-cream p-3 pb-4 transition-transform duration-150 hover:rotate-0 hover:-translate-y-1 active:translate-y-0`}
+              className="ink-panel group block rounded-2xl bg-cream p-3 pb-4 transition-transform duration-150 hover:-translate-y-1 active:translate-y-0"
             >
               <div className="ink-panel overflow-hidden rounded-lg">
                 <img

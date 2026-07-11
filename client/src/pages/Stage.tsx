@@ -202,45 +202,42 @@ export function Stage() {
         />
       ) : null}
 
-      <div className="relative mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4">
-        <header className="flex flex-wrap items-center justify-between gap-2">
+      <div className="relative mx-auto flex w-full max-w-5xl flex-col gap-2">
+        <header className="flex flex-nowrap items-center justify-between gap-1 overflow-x-auto">
           <Link
             to="/"
-            className="font-display ink-panel rounded-full bg-cream px-3 py-1 text-xs text-ink sm:text-sm"
+            className="font-display ink-panel shrink-0 rounded-full bg-cream px-2 py-1 text-xs text-ink"
           >
-            ◀ 목록
+            ◀
           </Link>
-          <h1 className="font-display ink-text -rotate-1 rounded-full bg-bubblegum px-4 py-1 text-lg text-white sm:text-xl">
+          <h1 className="font-display ink-text shrink-0 rounded-full bg-bubblegum px-3 py-1 text-sm text-white sm:text-lg">
             {stageInfo.title}
           </h1>
-          <div className="flex items-center gap-2">
-            <span
-              className={`font-display ink-panel rounded-full px-3 py-1 text-sm text-ink sm:text-base ${
-                timeLeft <= 30 ? 'bg-bubblegum text-white' : 'bg-cream'
-              }`}
-            >
-              ⏱️ {formatTime(timeLeft)}
-            </span>
-            <span className="font-display ink-panel rounded-full bg-cream px-3 py-1 text-sm text-ink sm:text-base">
-              🎯 {foundIndices.size}/{total}
-            </span>
-            <button
-              onClick={handleHint}
-              disabled={hintsLeft <= 0 || cleared || failed}
-              className="ink-btn font-display rounded-full bg-lemon px-3 py-1 text-sm text-ink disabled:bg-cream disabled:text-ink/40 sm:text-base"
-            >
-              🔍 힌트 {hintsLeft}
-            </button>
-          </div>
+          <span
+            className={`font-display ink-panel shrink-0 rounded-full px-2 py-1 text-xs text-ink sm:text-sm ${
+              timeLeft <= 30 ? 'bg-bubblegum text-white' : 'bg-cream'
+            }`}
+          >
+            ⏱️{formatTime(timeLeft)}
+          </span>
+          <span className="font-display ink-panel shrink-0 rounded-full bg-cream px-2 py-1 text-xs text-ink sm:text-sm">
+            🎯{foundIndices.size}/{total}
+          </span>
+          <button
+            onClick={handleHint}
+            disabled={hintsLeft <= 0 || cleared || failed}
+            className="ink-btn font-display shrink-0 rounded-full bg-lemon px-2 py-1 text-xs text-ink disabled:bg-cream disabled:text-ink/40 sm:text-sm"
+          >
+            🔍{hintsLeft}
+          </button>
         </header>
 
-        <div className={`flex flex-1 gap-5 sm:gap-6 ${direction === 'stack' ? 'flex-col' : 'flex-row'}`}>
+        <div className={`flex gap-2 sm:gap-3 ${direction === 'stack' ? 'flex-col' : 'flex-row'}`}>
           <ImagePanel
             src={`/stages/${stageId}/original.jpg`}
             alt="원본 그림"
             label="원본"
             aspectRatio={aspectRatio}
-            tilt="left"
           />
           <ImagePanel
             src={`/stages/${stageId}/modified.jpg`}
@@ -251,7 +248,6 @@ export function Stage() {
                 : '클릭으로 바로 찾기 · 방향키+Space로 걷다 찾기'
             }
             aspectRatio={aspectRatio}
-            tilt="right"
             interactive
             diffs={meta?.diffs}
             foundIndices={foundIndices}
