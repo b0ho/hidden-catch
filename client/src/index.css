@@ -46,6 +46,26 @@ body {
   }
 }
 
+@keyframes miss-flash {
+  0% {
+    opacity: 0.55;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes miss-toast {
+  0% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+}
+
 .animate-breathe {
   animation: breathe 2.4s ease-in-out infinite;
   transform-origin: bottom center;
@@ -58,4 +78,12 @@ body {
 
 .animate-found-pulse {
   animation: found-pulse 0.6s ease-out forwards;
+}
+
+.animate-miss-flash {
+  animation: miss-flash 0.4s ease-out forwards;
+}
+
+.animate-miss-toast {
+  animation: miss-toast 0.8s ease-out forwards;
 }

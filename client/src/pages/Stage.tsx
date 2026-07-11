@@ -26,6 +26,9 @@ export function Stage() {
   const [foundIndices, setFoundIndices] = useState<Set<number>>(new Set());
   const [timeLeft, setTimeLeft] = useState(TIME_LIMIT_SECONDS);
   const [failed, setFailed] = useState(false);
+  // Incrementing counter, not a boolean, so the flash/toast animation restarts on every
+  // miss even if two misses happen close together (React remounts on `key` change).
+  const [missPulse, setMissPulse] = useState(0);
   const direction = useOrientation();
   const isTouchDevice = useIsTouchDevice();
 
@@ -69,6 +72,7 @@ export function Stage() {
       if (next === 0) setFailed(true);
       return next;
     });
+    setMissPulse((n) => n + 1);
   }
 
   function attemptFind(xFrac: number, yFrac: number) {
@@ -97,6 +101,7 @@ export function Stage() {
     setFoundIndices(new Set());
     setTimeLeft(TIME_LIMIT_SECONDS);
     setFailed(false);
+    setMissPulse(0);
 
     fetch(`/stages/${stageId}/meta.json`)
       .then((res) => res.json())
@@ -133,6 +138,7 @@ export function Stage() {
     setFoundIndices(new Set());
     setTimeLeft(TIME_LIMIT_SECONDS);
     setFailed(false);
+    setMissPulse(0);
   }
 
   if (!stageId || !stageInfo) {
@@ -155,15 +161,30 @@ export function Stage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-b from-sky-900 to-slate-900 px-4 py-4 text-white sm:py-8">
+      {missPulse > 0 ? (
+        <div
+          key={missPulse}
+          className="animate-miss-flash pointer-events-none fixed inset-0 z-20 bg-red-600"
+        />
+      ) : null}
+
       <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4">
         <header className="flex items-center justify-between">
           <Link to="/" className="text-sm text-white/70 hover:text-white">
             ← 스테이지 목록
           </Link>
           <h1 className="text-lg font-bold sm:text-xl">{stageInfo.title}</h1>
-          <div className="flex flex-col items-end text-sm font-semibold">
+          <div className="relative flex flex-col items-end text-sm font-semibold">
             <span className={timeLeft <= 30 ? 'text-red-400' : ''}>{formatTime(timeLeft)}</span>
             <span>{foundIndices.size} / {total}</span>
+            {missPulse > 0 ? (
+              <span
+                key={missPulse}
+                className="animate-miss-toast pointer-events-none absolute -bottom-1 right-0 font-bold text-red-400"
+              >
+                -5초
+              </span>
+            ) : null}
           </div>
         </header>
 
