@@ -292,7 +292,7 @@ export function Stage() {
         <div
           ref={panelsRowRef}
           className={`flex gap-2 sm:gap-3 ${
-            isRow ? 'min-h-0 flex-1 flex-row items-stretch justify-center' : 'flex-col'
+            isRow ? 'min-h-0 flex-1 flex-row items-center justify-center' : 'flex-col'
           }`}
         >
           <ImagePanel
