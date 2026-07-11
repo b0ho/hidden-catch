@@ -14,6 +14,7 @@ const TIME_LIMIT_SECONDS = 180;
 const MISS_PENALTY_SECONDS = 5;
 const HINT_COUNT = 3;
 const HINT_DISPLAY_MS = 2200;
+const ZOOM_LEVELS = [1, 2, 3];
 /** Shared size + bottom offset for the joystick/찾기/확대 controls so they line up in one row. */
 const CONTROL_SIZE = 'h-16 w-16';
 const CONTROL_BOTTOM_STYLE = { bottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.375rem)' };
@@ -38,7 +39,7 @@ export function Stage() {
   const [missMarker, setMissMarker] = useState<MissMarker | null>(null);
   const [hintsLeft, setHintsLeft] = useState(HINT_COUNT);
   const [hintTarget, setHintTarget] = useState<HintTarget | null>(null);
-  const [zoomed, setZoomed] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState(1);
   const direction = useOrientation();
   const isTouchDevice = useIsTouchDevice();
 
@@ -135,7 +136,7 @@ export function Stage() {
     setMissMarker(null);
     setHintsLeft(HINT_COUNT);
     setHintTarget(null);
-    setZoomed(false);
+    setZoomLevel(1);
 
     fetch(`/stages/${stageId}/meta.json`)
       .then((res) => res.json())
@@ -243,7 +244,7 @@ export function Stage() {
             alt="원본 그림"
             label="원본"
             aspectRatio={aspectRatio}
-            zoomed={zoomed}
+            zoom={zoomLevel}
             characterPosition={position}
           />
           <ImagePanel
@@ -263,7 +264,7 @@ export function Stage() {
             characterWalking={isWalking}
             missMarker={missMarker}
             hintTarget={hintTarget}
-            zoomed={zoomed}
+            zoom={zoomLevel}
             onPanelClick={handlePanelClick}
           />
         </div>
@@ -287,12 +288,12 @@ export function Stage() {
       {!cleared && !failed ? (
         <div className="fixed left-1/2 z-10 -translate-x-1/2" style={CONTROL_BOTTOM_STYLE}>
           <button
-            onClick={() => setZoomed((z) => !z)}
+            onClick={() => setZoomLevel((z) => ZOOM_LEVELS[(ZOOM_LEVELS.indexOf(z) + 1) % ZOOM_LEVELS.length])}
             className={`ink-btn font-display ${CONTROL_SIZE} rounded-full text-base text-ink ${
-              zoomed ? 'bg-lemon' : 'bg-cream'
+              zoomLevel > 1 ? 'bg-lemon' : 'bg-cream'
             }`}
           >
-            {zoomed ? '1×' : '2×'}
+            {zoomLevel}×
           </button>
         </div>
       ) : null}

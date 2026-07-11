@@ -24,13 +24,49 @@ export function Character({ facing, isWalking, color = '#ff6b6b' }: CharacterPro
 
           <ellipse cx="50" cy="94" rx="22" ry="5" fill="#000000" opacity="0.18" />
 
-          {/* legs */}
-          <ellipse cx="38" cy="86" rx="8" ry="6" fill={color} stroke="#1f2a55" strokeWidth="2.5" />
-          <ellipse cx="62" cy="86" rx="8" ry="6" fill={color} stroke="#1f2a55" strokeWidth="2.5" />
+          {/* legs — swing in opposite phase, like alternating steps */}
+          <ellipse
+            cx="38"
+            cy="86"
+            rx="8"
+            ry="6"
+            fill={color}
+            stroke="#1f2a55"
+            strokeWidth="2.5"
+            className={isWalking ? 'animate-limb-swing' : ''}
+          />
+          <ellipse
+            cx="62"
+            cy="86"
+            rx="8"
+            ry="6"
+            fill={color}
+            stroke="#1f2a55"
+            strokeWidth="2.5"
+            className={isWalking ? 'animate-limb-swing-alt' : ''}
+          />
 
-          {/* arms */}
-          <ellipse cx="16" cy="58" rx="9" ry="7" fill={color} stroke="#1f2a55" strokeWidth="2.5" />
-          <ellipse cx="84" cy="58" rx="9" ry="7" fill={color} stroke="#1f2a55" strokeWidth="2.5" />
+          {/* arms — swing opposite to the same-side leg, like a natural walk cycle */}
+          <ellipse
+            cx="16"
+            cy="58"
+            rx="9"
+            ry="7"
+            fill={color}
+            stroke="#1f2a55"
+            strokeWidth="2.5"
+            className={isWalking ? 'animate-limb-swing-alt' : ''}
+          />
+          <ellipse
+            cx="84"
+            cy="58"
+            rx="9"
+            ry="7"
+            fill={color}
+            stroke="#1f2a55"
+            strokeWidth="2.5"
+            className={isWalking ? 'animate-limb-swing' : ''}
+          />
 
           {/* body */}
           <circle cx="50" cy="52" r="38" fill="url(#bodyGradient)" stroke="#1f2a55" strokeWidth="3" />

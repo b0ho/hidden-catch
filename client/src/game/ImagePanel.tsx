@@ -18,8 +18,6 @@ export interface HintTarget {
   nonce: number;
 }
 
-const ZOOM_SCALE = 2;
-
 interface ImagePanelProps {
   src: string;
   alt: string;
@@ -33,8 +31,8 @@ interface ImagePanelProps {
   characterWalking?: boolean;
   missMarker?: MissMarker | null;
   hintTarget?: HintTarget | null;
-  /** When true, the image content is rendered at 2x size inside a scrollable viewport. */
-  zoomed?: boolean;
+  /** 1 = no zoom. 2/3 render the image content at that multiple inside a scrollable viewport. */
+  zoom?: number;
   onPanelClick?: (xFrac: number, yFrac: number) => void;
 }
 
@@ -51,11 +49,12 @@ export function ImagePanel({
   characterWalking = false,
   missMarker,
   hintTarget,
-  zoomed = false,
+  zoom = 1,
   onPanelClick,
 }: ImagePanelProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const found = foundIndices ?? new Set<number>();
+  const zoomed = zoom > 1;
 
   // While zoomed, keep the character centered in view as it walks — both panels take the
   // same characterPosition, so the original and modified photos stay scrolled to the same
@@ -65,22 +64,21 @@ export function ImagePanel({
     const el = containerRef.current;
     const rect = el.getBoundingClientRect();
     if (rect.width === 0 || rect.height === 0) return;
-    const contentWidth = rect.width * ZOOM_SCALE;
-    const contentHeight = rect.height * ZOOM_SCALE;
+    const contentWidth = rect.width * zoom;
+    const contentHeight = rect.height * zoom;
     const targetLeft = characterPosition.x * contentWidth - rect.width / 2;
     const targetTop = characterPosition.y * contentHeight - rect.height / 2;
     el.scrollLeft = Math.max(0, Math.min(contentWidth - rect.width, targetLeft));
     el.scrollTop = Math.max(0, Math.min(contentHeight - rect.height, targetTop));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [zoomed, characterPosition?.x, characterPosition?.y]);
+  }, [zoomed, zoom, characterPosition?.x, characterPosition?.y]);
 
   function handleClick(event: React.MouseEvent<HTMLDivElement>) {
     if (!interactive || !onPanelClick || !containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
-    const scale = zoomed ? ZOOM_SCALE : 1;
     const { scrollLeft, scrollTop } = containerRef.current;
-    const xFrac = (scrollLeft + (event.clientX - rect.left)) / (rect.width * scale);
-    const yFrac = (scrollTop + (event.clientY - rect.top)) / (rect.height * scale);
+    const xFrac = (scrollLeft + (event.clientX - rect.left)) / (rect.width * zoom);
+    const yFrac = (scrollTop + (event.clientY - rect.top)) / (rect.height * zoom);
     onPanelClick(xFrac, yFrac);
   }
 
@@ -96,10 +94,7 @@ export function ImagePanel({
           className={`relative w-full rounded-md ${zoomed ? 'overflow-auto' : 'overflow-hidden'}`}
           style={{ aspectRatio }}
         >
-          <div
-            className="relative"
-            style={{ width: zoomed ? `${ZOOM_SCALE * 100}%` : '100%', height: zoomed ? `${ZOOM_SCALE * 100}%` : '100%' }}
-          >
+          <div className="relative" style={{ width: `${zoom * 100}%`, height: `${zoom * 100}%` }}>
             <img
               src={src}
               alt={alt}
