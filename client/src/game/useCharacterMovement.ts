@@ -13,13 +13,11 @@ const SPEED = 0.55;
 interface UseCharacterMovementOptions {
   /** Panel width / height, used so vertical speed matches horizontal speed visually. */
   aspectRatio?: number;
-  /** Called every frame the character's position actually changes. */
-  onMove?: (position: CharacterPosition) => void;
 }
 
 export function useCharacterMovement(
   initial: CharacterPosition = DEFAULT_POSITION,
-  { aspectRatio = 1, onMove }: UseCharacterMovementOptions = {},
+  { aspectRatio = 1 }: UseCharacterMovementOptions = {},
 ) {
   const [position, setPosition] = useState<CharacterPosition>(initial);
   const [facing, setFacing] = useState<'left' | 'right'>('right');
@@ -29,12 +27,10 @@ export function useCharacterMovement(
   const targetRef = useRef<CharacterPosition | null>(null);
   const inputRef = useRef<{ dx: number; dy: number }>({ dx: 0, dy: 0 });
   const aspectRatioRef = useRef(aspectRatio);
-  const onMoveRef = useRef(onMove);
   const lastTsRef = useRef<number | null>(null);
   const rafRef = useRef<number | null>(null);
 
   aspectRatioRef.current = aspectRatio;
-  onMoveRef.current = onMove;
 
   useEffect(() => {
     function tick(ts: number) {
@@ -80,7 +76,6 @@ export function useCharacterMovement(
         if (Math.abs(dxFacing) > 0.0005) {
           setFacing(dxFacing >= 0 ? 'right' : 'left');
         }
-        onMoveRef.current?.(positionRef.current);
       } else {
         setIsWalking(false);
       }
