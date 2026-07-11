@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import type { StageMeta } from '@shared/types';
-import { ImagePanel } from '../game/ImagePanel';
+import { ImagePanel, type MissMarker } from '../game/ImagePanel';
 import { useCharacterMovement } from '../game/useCharacterMovement';
 import { useKeyboardInput } from '../game/useKeyboardInput';
 import { VirtualJoystick } from '../game/VirtualJoystick';
@@ -26,9 +26,11 @@ export function Stage() {
   const [foundIndices, setFoundIndices] = useState<Set<number>>(new Set());
   const [timeLeft, setTimeLeft] = useState(TIME_LIMIT_SECONDS);
   const [failed, setFailed] = useState(false);
-  // Incrementing counter, not a boolean, so the flash/toast animation restarts on every
-  // miss even if two misses happen close together (React remounts on `key` change).
-  const [missPulse, setMissPulse] = useState(0);
+  // Where the last miss happened — click position for a click, character position for
+  // Space/찾기 (both funnel through attemptFind with the character's own coordinates).
+  // `nonce` is unique per miss so the fade/float animation restarts even for back-to-back
+  // misses at the same spot (React remounts on `key` change).
+  const [missMarker, setMissMarker] = useState<MissMarker | null>(null);
   const direction = useOrientation();
   const isTouchDevice = useIsTouchDevice();
 
@@ -66,18 +68,18 @@ export function Stage() {
     return foundNew;
   }
 
-  function applyMissPenalty() {
+  function applyMissPenalty(xFrac: number, yFrac: number) {
     setTimeLeft((prev) => {
       const next = Math.max(0, prev - MISS_PENALTY_SECONDS);
       if (next === 0) setFailed(true);
       return next;
     });
-    setMissPulse((n) => n + 1);
+    setMissMarker({ x: xFrac, y: yFrac, nonce: Date.now() });
   }
 
   function attemptFind(xFrac: number, yFrac: number) {
     if (failedRef.current || clearedRef.current) return;
-    if (!checkHit(xFrac, yFrac)) applyMissPenalty();
+    if (!checkHit(xFrac, yFrac)) applyMissPenalty(xFrac, yFrac);
   }
 
   function handleFind() {
@@ -101,7 +103,7 @@ export function Stage() {
     setFoundIndices(new Set());
     setTimeLeft(TIME_LIMIT_SECONDS);
     setFailed(false);
-    setMissPulse(0);
+    setMissMarker(null);
 
     fetch(`/stages/${stageId}/meta.json`)
       .then((res) => res.json())
@@ -138,7 +140,7 @@ export function Stage() {
     setFoundIndices(new Set());
     setTimeLeft(TIME_LIMIT_SECONDS);
     setFailed(false);
-    setMissPulse(0);
+    setMissMarker(null);
   }
 
   if (!stageId || !stageInfo) {
@@ -161,9 +163,9 @@ export function Stage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-b from-sky-900 to-slate-900 px-4 py-4 text-white sm:py-8">
-      {missPulse > 0 ? (
+      {missMarker ? (
         <div
-          key={missPulse}
+          key={missMarker.nonce}
           className="animate-miss-flash pointer-events-none fixed inset-0 z-20 bg-red-600"
         />
       ) : null}
@@ -174,17 +176,9 @@ export function Stage() {
             ← 스테이지 목록
           </Link>
           <h1 className="text-lg font-bold sm:text-xl">{stageInfo.title}</h1>
-          <div className="relative flex flex-col items-end text-sm font-semibold">
+          <div className="flex flex-col items-end text-sm font-semibold">
             <span className={timeLeft <= 30 ? 'text-red-400' : ''}>{formatTime(timeLeft)}</span>
             <span>{foundIndices.size} / {total}</span>
-            {missPulse > 0 ? (
-              <span
-                key={missPulse}
-                className="animate-miss-toast pointer-events-none absolute -bottom-1 right-0 font-bold text-red-400"
-              >
-                -5초
-              </span>
-            ) : null}
           </div>
         </header>
 
@@ -210,9 +204,19 @@ export function Stage() {
             characterPosition={position}
             characterFacing={facing}
             characterWalking={isWalking}
+            missMarker={missMarker}
             onPanelClick={handlePanelClick}
           />
         </div>
+      </div>
+
+      <div className="fixed inset-x-0 bottom-0 z-10 h-2.5 bg-white/10">
+        <div
+          className={`h-full transition-[width] duration-1000 ease-linear ${
+            timeLeft <= 30 ? 'bg-red-500' : timeLeft <= 90 ? 'bg-amber-400' : 'bg-emerald-400'
+          }`}
+          style={{ width: `${(timeLeft / TIME_LIMIT_SECONDS) * 100}%` }}
+        />
       </div>
 
       {isTouchDevice && !cleared && !failed ? (

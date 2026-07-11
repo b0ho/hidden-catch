@@ -3,6 +3,13 @@ import type { DiffRegion } from '@shared/types';
 import { Character } from './Character';
 import type { CharacterPosition } from './useCharacterMovement';
 
+export interface MissMarker {
+  x: number;
+  y: number;
+  /** Unique per miss so the fade/float animation restarts even for back-to-back misses at the same spot. */
+  nonce: number;
+}
+
 interface ImagePanelProps {
   src: string;
   alt: string;
@@ -14,6 +21,7 @@ interface ImagePanelProps {
   characterPosition?: CharacterPosition;
   characterFacing?: 'left' | 'right';
   characterWalking?: boolean;
+  missMarker?: MissMarker | null;
   onPanelClick?: (xFrac: number, yFrac: number) => void;
 }
 
@@ -28,6 +36,7 @@ export function ImagePanel({
   characterPosition,
   characterFacing = 'right',
   characterWalking = false,
+  missMarker,
   onPanelClick,
 }: ImagePanelProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -74,6 +83,20 @@ export function ImagePanel({
             </div>
           ) : null,
         )}
+
+        {missMarker ? (
+          <div
+            key={missMarker.nonce}
+            className="animate-miss-toast pointer-events-none absolute font-bold text-red-400 drop-shadow-md"
+            style={{
+              left: `${missMarker.x * 100}%`,
+              top: `${missMarker.y * 100}%`,
+              transform: 'translate(-50%, -50%)',
+            }}
+          >
+            -5초
+          </div>
+        ) : null}
 
         {interactive && characterPosition ? (
           <div
