@@ -50,6 +50,9 @@ export function useKeyboardInput(setInput: (dx: number, dy: number) => void, ena
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
       window.removeEventListener('blur', onBlur);
+      // pressedRef is a plain mutable Set (not a DOM node ref), so it's always the
+      // latest value here — safe to read/clear in cleanup.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       pressedRef.current.clear();
       setInput(0, 0);
     };
