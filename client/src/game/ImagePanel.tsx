@@ -92,15 +92,18 @@ export function ImagePanel({
     onPanelClick(xFrac, yFrac);
   }
 
-  // fit="height" with a computed pixel box: the frame gets an explicit size (guaranteed to fit
-  // both the row's height and this panel's share of its width), and the viewport just fills it —
-  // no aspect-ratio needed there since the box's own ratio already matches the image.
-  const usePixelBox = fit === 'height' && computedSize;
+  // With a computed pixel box (from the parent measuring the actual visible layout area): the
+  // frame gets an explicit size (guaranteed to fit within the available width AND height,
+  // whichever is tighter), and the viewport just fills it — no aspect-ratio math needed there
+  // since the box's own ratio already matches the image. Without one yet (first paint, before
+  // the ResizeObserver fires), `fit` picks a reasonable CSS-only fallback so nothing flashes at
+  // zero size.
+  const usePixelBox = computedSize != null;
   const outerClass = usePixelBox ? 'flex flex-col items-center' : `flex min-w-0 flex-col items-center ${fit === 'height' ? 'h-full' : 'flex-1'}`;
   const frameClass = usePixelBox
     ? 'ink-panel relative select-none overflow-hidden rounded-xl bg-cream p-1.5'
     : `ink-panel relative select-none overflow-hidden rounded-xl bg-cream p-1.5 ${fit === 'height' ? 'h-full w-auto' : 'w-full min-w-0'}`;
-  const frameStyle = usePixelBox ? { width: computedSize.width, height: computedSize.height } : undefined;
+  const frameStyle = computedSize ? { width: computedSize.width, height: computedSize.height } : undefined;
   const viewportClass = usePixelBox
     ? `relative h-full w-full rounded-md ${zoomed ? 'overflow-auto' : 'overflow-hidden'}`
     : `relative rounded-md ${fit === 'height' ? 'h-full w-auto' : 'w-full min-w-0'} ${zoomed ? 'overflow-auto' : 'overflow-hidden'}`;
