@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import type { StageMeta } from '@shared/types';
-import { ImagePanel, type MissMarker } from '../game/ImagePanel';
+import { ImagePanel, type HintTarget, type MissMarker } from '../game/ImagePanel';
 import { useCharacterMovement } from '../game/useCharacterMovement';
 import { useKeyboardInput } from '../game/useKeyboardInput';
 import { VirtualJoystick } from '../game/VirtualJoystick';
@@ -12,6 +12,8 @@ import { stages } from '../data/stages';
 
 const TIME_LIMIT_SECONDS = 180;
 const MISS_PENALTY_SECONDS = 5;
+const HINT_COUNT = 3;
+const HINT_DISPLAY_MS = 2200;
 
 function formatTime(seconds: number) {
   const m = Math.floor(seconds / 60);
@@ -31,6 +33,8 @@ export function Stage() {
   // `nonce` is unique per miss so the fade/float animation restarts even for back-to-back
   // misses at the same spot (React remounts on `key` change).
   const [missMarker, setMissMarker] = useState<MissMarker | null>(null);
+  const [hintsLeft, setHintsLeft] = useState(HINT_COUNT);
+  const [hintTarget, setHintTarget] = useState<HintTarget | null>(null);
   const direction = useOrientation();
   const isTouchDevice = useIsTouchDevice();
 
@@ -86,6 +90,27 @@ export function Stage() {
     attemptFind(positionRef.current.x, positionRef.current.y);
   }
 
+  /** Reveals one random undiscovered diff with a ping animation — doesn't move the
+   * character or count as a find, just shows where to go. Limited to HINT_COUNT per stage. */
+  function handleHint() {
+    if (hintsLeft <= 0 || failedRef.current || clearedRef.current) return;
+    const currentMeta = metaRef.current;
+    if (!currentMeta) return;
+    const undiscovered = currentMeta.diffs
+      .map((diff, index) => ({ diff, index }))
+      .filter(({ index }) => !foundRef.current.has(index));
+    if (undiscovered.length === 0) return;
+    const pick = undiscovered[Math.floor(Math.random() * undiscovered.length)];
+    setHintsLeft((n) => n - 1);
+    setHintTarget({ x: pick.diff.x, y: pick.diff.y, radius: pick.diff.radius, nonce: Date.now() });
+  }
+
+  useEffect(() => {
+    if (!hintTarget) return;
+    const id = window.setTimeout(() => setHintTarget(null), HINT_DISPLAY_MS);
+    return () => window.clearTimeout(id);
+  }, [hintTarget]);
+
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (event.code !== 'Space') return;
@@ -104,6 +129,8 @@ export function Stage() {
     setTimeLeft(TIME_LIMIT_SECONDS);
     setFailed(false);
     setMissMarker(null);
+    setHintsLeft(HINT_COUNT);
+    setHintTarget(null);
 
     fetch(`/stages/${stageId}/meta.json`)
       .then((res) => res.json())
@@ -141,6 +168,8 @@ export function Stage() {
     setTimeLeft(TIME_LIMIT_SECONDS);
     setFailed(false);
     setMissMarker(null);
+    setHintsLeft(HINT_COUNT);
+    setHintTarget(null);
   }
 
   if (!stageId || !stageInfo) {
@@ -193,8 +222,15 @@ export function Stage() {
               ⏱️ {formatTime(timeLeft)}
             </span>
             <span className="font-display ink-panel rounded-full bg-cream px-3 py-1 text-sm text-ink sm:text-base">
-              🔍 {foundIndices.size}/{total}
+              🎯 {foundIndices.size}/{total}
             </span>
+            <button
+              onClick={handleHint}
+              disabled={hintsLeft <= 0 || cleared || failed}
+              className="ink-btn font-display rounded-full bg-lemon px-3 py-1 text-sm text-ink disabled:bg-cream disabled:text-ink/40 sm:text-base"
+            >
+              🔍 힌트 {hintsLeft}
+            </button>
           </div>
         </header>
 
@@ -223,6 +259,7 @@ export function Stage() {
             characterFacing={facing}
             characterWalking={isWalking}
             missMarker={missMarker}
+            hintTarget={hintTarget}
             onPanelClick={handlePanelClick}
           />
         </div>
@@ -238,16 +275,16 @@ export function Stage() {
       </div>
 
       {isTouchDevice && !cleared && !failed ? (
-        <div className="fixed bottom-6 left-6 z-10">
+        <div className="fixed bottom-4 left-4 z-10">
           <VirtualJoystick onChange={setInput} />
         </div>
       ) : null}
 
       {!cleared && !failed ? (
-        <div className="fixed bottom-6 right-6 z-10">
+        <div className="fixed bottom-4 right-4 z-10 sm:bottom-6 sm:right-6">
           <button
             onClick={handleFind}
-            className="ink-btn font-display h-24 w-24 rounded-full bg-mint text-xl text-ink"
+            className="ink-btn font-display h-20 w-20 rounded-full bg-mint text-lg text-ink sm:h-24 sm:w-24 sm:text-xl"
           >
             찾기
           </button>

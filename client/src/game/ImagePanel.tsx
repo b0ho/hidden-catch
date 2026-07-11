@@ -10,6 +10,14 @@ export interface MissMarker {
   nonce: number;
 }
 
+export interface HintTarget {
+  x: number;
+  y: number;
+  radius: number;
+  /** Unique per hint so the ping animation restarts if the same spot is hinted twice. */
+  nonce: number;
+}
+
 interface ImagePanelProps {
   src: string;
   alt: string;
@@ -22,6 +30,7 @@ interface ImagePanelProps {
   characterFacing?: 'left' | 'right';
   characterWalking?: boolean;
   missMarker?: MissMarker | null;
+  hintTarget?: HintTarget | null;
   /** Slight tilt so the two panels read as two photos laid on a table, not two <div>s in a flex row. */
   tilt?: 'left' | 'right';
   onPanelClick?: (xFrac: number, yFrac: number) => void;
@@ -39,6 +48,7 @@ export function ImagePanel({
   characterFacing = 'right',
   characterWalking = false,
   missMarker,
+  hintTarget,
   tilt = 'left',
   onPanelClick,
 }: ImagePanelProps) {
@@ -102,6 +112,24 @@ export function ImagePanel({
               }}
             >
               -5초
+            </div>
+          ) : null}
+
+          {hintTarget ? (
+            <div
+              key={hintTarget.nonce}
+              className="pointer-events-none absolute"
+              style={{
+                left: `${hintTarget.x * 100}%`,
+                top: `${hintTarget.y * 100}%`,
+                width: `${hintTarget.radius * 2.6 * 100}%`,
+                aspectRatio: 1,
+                transform: 'translate(-50%, -50%)',
+              }}
+            >
+              <div className="animate-hint-ping absolute inset-0 rounded-full bg-lemon" />
+              <div className="absolute inset-0 rounded-full border-4 border-dashed border-lemon-deep" />
+              <div className="absolute inset-0 flex items-center justify-center text-lg">🔍</div>
             </div>
           ) : null}
 
