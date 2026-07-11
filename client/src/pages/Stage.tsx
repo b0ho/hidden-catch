@@ -244,6 +244,7 @@ export function Stage() {
             label="원본"
             aspectRatio={aspectRatio}
             zoomed={zoomed}
+            characterPosition={position}
           />
           <ImagePanel
             src={`/stages/${stageId}/modified.jpg`}

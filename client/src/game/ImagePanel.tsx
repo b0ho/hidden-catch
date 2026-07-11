@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import type { DiffRegion } from '@shared/types';
 import { Character } from './Character';
 import type { CharacterPosition } from './useCharacterMovement';
@@ -56,6 +56,23 @@ export function ImagePanel({
 }: ImagePanelProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const found = foundIndices ?? new Set<number>();
+
+  // While zoomed, keep the character centered in view as it walks — both panels take the
+  // same characterPosition, so the original and modified photos stay scrolled to the same
+  // region even though each has its own independent scroll container.
+  useEffect(() => {
+    if (!zoomed || !characterPosition || !containerRef.current) return;
+    const el = containerRef.current;
+    const rect = el.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return;
+    const contentWidth = rect.width * ZOOM_SCALE;
+    const contentHeight = rect.height * ZOOM_SCALE;
+    const targetLeft = characterPosition.x * contentWidth - rect.width / 2;
+    const targetTop = characterPosition.y * contentHeight - rect.height / 2;
+    el.scrollLeft = Math.max(0, Math.min(contentWidth - rect.width, targetLeft));
+    el.scrollTop = Math.max(0, Math.min(contentHeight - rect.height, targetTop));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [zoomed, characterPosition?.x, characterPosition?.y]);
 
   function handleClick(event: React.MouseEvent<HTMLDivElement>) {
     if (!interactive || !onPanelClick || !containerRef.current) return;
