@@ -65,13 +65,11 @@ export function ImagePanel({
   }
 
   return (
-    <div className={`flex flex-1 min-w-0 flex-col items-center gap-2 ${tiltClass}`}>
-      <span className="font-display ink-panel rounded-full bg-cream px-3 py-0.5 text-center text-[11px] text-ink sm:text-xs">
-        {label}
-      </span>
+    <div className={`flex flex-1 min-w-0 flex-col items-center ${tiltClass}`}>
       <div
         ref={containerRef}
         onClick={handleClick}
+        aria-label={label}
         className={`ink-panel relative w-full select-none overflow-hidden rounded-xl bg-cream p-1.5 ${interactive ? 'cursor-crosshair' : ''}`}
       >
         <div className="relative w-full overflow-hidden rounded-md" style={{ aspectRatio }}>

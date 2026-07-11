@@ -275,7 +275,10 @@ export function Stage() {
       </div>
 
       {isTouchDevice && !cleared && !failed ? (
-        <div className="fixed bottom-4 left-4 z-10">
+        <div
+          className="fixed left-2 z-10"
+          style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.375rem)' }}
+        >
           <VirtualJoystick onChange={setInput} />
         </div>
       ) : null}
