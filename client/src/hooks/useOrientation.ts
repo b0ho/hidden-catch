@@ -2,14 +2,11 @@ import { useEffect, useState } from 'react';
 
 export type LayoutDirection = 'stack' | 'row';
 
-const DESKTOP_QUERY = '(min-width: 768px)';
-const PORTRAIT_QUERY = '(orientation: portrait)';
-
+/** Pure viewport-size comparison — wider-than-tall lays the two photos side by side,
+ * taller-than-wide stacks them. Works the same whether it's a rotated phone or a resized
+ * desktop window, instead of special-casing "desktop" to always mean side-by-side. */
 function computeDirection(): LayoutDirection {
-  const isDesktop = window.matchMedia(DESKTOP_QUERY).matches;
-  if (isDesktop) return 'row';
-  const isPortrait = window.matchMedia(PORTRAIT_QUERY).matches;
-  return isPortrait ? 'stack' : 'row';
+  return window.innerWidth >= window.innerHeight ? 'row' : 'stack';
 }
 
 export function useOrientation(): LayoutDirection {
@@ -17,15 +14,11 @@ export function useOrientation(): LayoutDirection {
 
   useEffect(() => {
     const update = () => setDirection(computeDirection());
-    const desktopQuery = window.matchMedia(DESKTOP_QUERY);
-    const portraitQuery = window.matchMedia(PORTRAIT_QUERY);
-    desktopQuery.addEventListener('change', update);
-    portraitQuery.addEventListener('change', update);
     window.addEventListener('resize', update);
+    window.addEventListener('orientationchange', update);
     return () => {
-      desktopQuery.removeEventListener('change', update);
-      portraitQuery.removeEventListener('change', update);
       window.removeEventListener('resize', update);
+      window.removeEventListener('orientationchange', update);
     };
   }, []);
 

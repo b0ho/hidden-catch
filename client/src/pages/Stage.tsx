@@ -244,10 +244,12 @@ export function Stage() {
   const timeRatio = timeLeft / TIME_LIMIT_SECONDS;
   const barColor = timeLeft <= 30 ? 'bg-bubblegum' : timeLeft <= 90 ? 'bg-lemon' : 'bg-mint';
 
+  const rowMaxWidth = 'max-w-[1600px]';
+
   return (
     <div
-      className={`arcade-sky relative flex flex-col overflow-hidden px-3 py-4 sm:px-4 sm:py-6 ${
-        isRow ? 'h-screen' : 'min-h-screen'
+      className={`arcade-sky relative flex flex-col overflow-hidden ${
+        isRow ? 'h-screen px-2 py-2' : 'min-h-screen px-3 py-4 sm:px-4 sm:py-6'
       }`}
     >
       {missMarker ? (
@@ -258,7 +260,7 @@ export function Stage() {
       ) : null}
 
       <div
-        className={`relative mx-auto flex w-full max-w-5xl flex-col gap-2 ${isRow ? 'min-h-0 flex-1' : ''}`}
+        className={`relative mx-auto flex w-full flex-col gap-2 ${isRow ? `min-h-0 flex-1 ${rowMaxWidth}` : 'max-w-5xl'}`}
       >
         <header className="flex shrink-0 flex-nowrap items-center justify-between gap-1 overflow-x-auto">
           <Link
@@ -330,7 +332,9 @@ export function Stage() {
         </div>
       </div>
 
-      <div className="relative z-10 mx-auto mt-2 w-full max-w-5xl shrink-0 px-1 sm:mt-4">
+      <div
+        className={`relative z-10 mx-auto w-full shrink-0 px-1 ${isRow ? `mt-1 ${rowMaxWidth}` : 'mt-2 max-w-5xl sm:mt-4'}`}
+      >
         <div className="ink-panel h-4 w-full overflow-hidden rounded-full bg-cream">
           <div
             className={`h-full transition-[width] duration-1000 ease-linear ${barColor}`}
