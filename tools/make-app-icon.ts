@@ -5,10 +5,10 @@ import sharp from 'sharp';
 const svg = `
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512">
   <defs>
-    <radialGradient id="bg" cx="35%" cy="30%" r="80%">
-      <stop offset="0%" stop-color="#38bdf8"/>
-      <stop offset="100%" stop-color="#0f172a"/>
-    </radialGradient>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#7fd1ff"/>
+      <stop offset="100%" stop-color="#2f8fe0"/>
+    </linearGradient>
     <radialGradient id="body" cx="38%" cy="30%" r="75%">
       <stop offset="0%" stop-color="#ffffff" stop-opacity="0.85"/>
       <stop offset="35%" stop-color="#ff6b6b" stop-opacity="0.95"/>
@@ -16,12 +16,12 @@ const svg = `
     </radialGradient>
   </defs>
   <rect width="512" height="512" rx="96" fill="url(#bg)"/>
-  <circle cx="256" cy="280" r="150" fill="url(#body)"/>
-  <circle cx="205" cy="250" r="34" fill="#ffffff"/>
-  <circle cx="307" cy="250" r="34" fill="#ffffff"/>
-  <circle cx="213" cy="256" r="16" fill="#2b2b2b"/>
-  <circle cx="315" cy="256" r="16" fill="#2b2b2b"/>
-  <path d="M 210 320 Q 256 355 302 320" stroke="#2b2b2b" stroke-width="10" fill="none" stroke-linecap="round"/>
+  <circle cx="256" cy="286" r="150" fill="url(#body)" stroke="#1f2a55" stroke-width="12"/>
+  <circle cx="205" cy="256" r="34" fill="#ffffff" stroke="#1f2a55" stroke-width="8"/>
+  <circle cx="307" cy="256" r="34" fill="#ffffff" stroke="#1f2a55" stroke-width="8"/>
+  <circle cx="213" cy="262" r="16" fill="#2b2b2b"/>
+  <circle cx="315" cy="262" r="16" fill="#2b2b2b"/>
+  <path d="M 210 326 Q 256 361 302 326" stroke="#1f2a55" stroke-width="10" fill="none" stroke-linecap="round"/>
 </svg>`;
 
 async function main() {
