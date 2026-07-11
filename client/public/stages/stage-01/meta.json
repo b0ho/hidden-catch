@@ -1,0 +1,35 @@
+{
+  "id": "stage-01",
+  "diffs": [
+    {
+      "x": 0.833,
+      "y": 0.15,
+      "radius": 0.07,
+      "editType": "colorChange"
+    },
+    {
+      "x": 0.222,
+      "y": 0.2,
+      "radius": 0.06,
+      "editType": "objectRemove"
+    },
+    {
+      "x": 0.522,
+      "y": 0.55,
+      "radius": 0.05,
+      "editType": "flip"
+    },
+    {
+      "x": 0.167,
+      "y": 0.783,
+      "radius": 0.05,
+      "editType": "resize"
+    },
+    {
+      "x": 0.689,
+      "y": 0.75,
+      "radius": 0.05,
+      "editType": "duplicate"
+    }
+  ]
+}

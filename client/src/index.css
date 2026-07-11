@@ -1,0 +1,61 @@
+@import 'tailwindcss';
+
+:root {
+  color-scheme: light dark;
+}
+
+body {
+  margin: 0;
+}
+
+#root {
+  min-height: 100svh;
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(1.04);
+  }
+}
+
+@keyframes walk-bounce {
+  0%,
+  100% {
+    transform: translateY(0) scale(1, 1);
+  }
+  30% {
+    transform: translateY(-10%) scale(0.94, 1.08);
+  }
+  60% {
+    transform: translateY(0) scale(1.06, 0.94);
+  }
+}
+
+@keyframes found-pulse {
+  0% {
+    transform: scale(0.4);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+.animate-breathe {
+  animation: breathe 2.4s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+
+.animate-walk-bounce {
+  animation: walk-bounce 0.35s ease-in-out;
+  transform-origin: bottom center;
+}
+
+.animate-found-pulse {
+  animation: found-pulse 0.6s ease-out forwards;
+}
