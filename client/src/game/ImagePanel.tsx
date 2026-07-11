@@ -82,7 +82,6 @@ export function ImagePanel({
               left: `${characterPosition.x * 100}%`,
               top: `${characterPosition.y * 100}%`,
               transform: 'translate(-50%, -85%)',
-              transition: 'left 0.35s ease-out, top 0.35s ease-out',
             }}
           >
             <Character facing={characterFacing} isWalking={characterWalking} />

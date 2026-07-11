@@ -1,10 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import type { StageMeta } from '@shared/types';
 import { ImagePanel } from '../game/ImagePanel';
-import { useCharacterMovement } from '../game/useCharacterMovement';
+import { useCharacterMovement, type CharacterPosition } from '../game/useCharacterMovement';
+import { useKeyboardInput } from '../game/useKeyboardInput';
+import { VirtualJoystick } from '../game/VirtualJoystick';
 import { hitTest } from '../game/hitTest';
 import { useOrientation } from '../hooks/useOrientation';
+import { useIsTouchDevice } from '../hooks/useIsTouchDevice';
 import { stages } from '../data/stages';
 
 export function Stage() {
@@ -13,7 +16,31 @@ export function Stage() {
   const [aspectRatio, setAspectRatio] = useState(3 / 2);
   const [foundIndices, setFoundIndices] = useState<Set<number>>(new Set());
   const direction = useOrientation();
-  const { position, facing, isWalking, moveTo } = useCharacterMovement();
+  const isTouchDevice = useIsTouchDevice();
+
+  // Refs so the per-frame movement callback always sees the latest stage data
+  // without having to recreate the callback (and restart the rAF loop) every render.
+  const metaRef = useRef(meta);
+  metaRef.current = meta;
+  const foundRef = useRef(foundIndices);
+  foundRef.current = foundIndices;
+
+  function handleCharacterMove(pos: CharacterPosition) {
+    const currentMeta = metaRef.current;
+    if (!currentMeta) return;
+    currentMeta.diffs.forEach((diff, index) => {
+      if (foundRef.current.has(index)) return;
+      if (hitTest(pos.x, pos.y, diff, aspectRatio)) {
+        setFoundIndices((prev) => (prev.has(index) ? prev : new Set(prev).add(index)));
+      }
+    });
+  }
+
+  const { position, facing, isWalking, moveTo, setInput } = useCharacterMovement(undefined, {
+    aspectRatio,
+    onMove: handleCharacterMove,
+  });
+  useKeyboardInput(setInput);
 
   const stageInfo = stages.find((s) => s.id === stageId);
 
@@ -46,13 +73,6 @@ export function Stage() {
 
   function handlePanelClick(xFrac: number, yFrac: number) {
     moveTo(xFrac, yFrac);
-    if (!meta) return;
-    meta.diffs.forEach((diff, index) => {
-      if (foundIndices.has(index)) return;
-      if (hitTest(xFrac, yFrac, diff, aspectRatio)) {
-        setFoundIndices((prev) => new Set(prev).add(index));
-      }
-    });
   }
 
   const total = meta?.diffs.length ?? 5;
@@ -81,7 +101,7 @@ export function Stage() {
           <ImagePanel
             src={`/stages/${stageId}/modified.jpg`}
             alt="다른 부분을 찾아 클릭하세요"
-            label="다른 그림 (클릭해서 이동)"
+            label={isTouchDevice ? '다른 그림 (터치해서 이동, 조이스틱으로 걷기)' : '다른 그림 (클릭해서 이동, 방향키로 걷기)'}
             aspectRatio={aspectRatio}
             interactive
             diffs={meta?.diffs}
@@ -93,6 +113,12 @@ export function Stage() {
           />
         </div>
       </div>
+
+      {isTouchDevice && !cleared ? (
+        <div className="fixed bottom-6 left-6 z-10">
+          <VirtualJoystick onChange={setInput} />
+        </div>
+      ) : null}
 
       {cleared ? (
         <div className="fixed inset-0 flex items-center justify-center bg-black/70 px-4">

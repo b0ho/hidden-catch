@@ -1,0 +1,7 @@
+[
+  { "x": 0.454, "y": 0.313, "radius": 0.035, "editType": "colorChange" },
+  { "x": 0.44, "y": 0.507, "radius": 0.042, "editType": "objectRemove" },
+  { "x": 0.62, "y": 0.507, "radius": 0.037, "editType": "resize" },
+  { "x": 0.787, "y": 0.90, "radius": 0.05, "editType": "flip" },
+  { "x": 0.889, "y": 0.139, "radius": 0.04, "editType": "duplicate" }
+]

@@ -2,33 +2,33 @@
   "id": "stage-03",
   "diffs": [
     {
-      "x": 0.156,
-      "y": 0.45,
-      "radius": 0.055,
+      "x": 0.454,
+      "y": 0.313,
+      "radius": 0.035,
       "editType": "colorChange"
     },
     {
-      "x": 0.322,
-      "y": 0.583,
-      "radius": 0.06,
+      "x": 0.44,
+      "y": 0.507,
+      "radius": 0.042,
       "editType": "objectRemove"
     },
     {
-      "x": 0.678,
-      "y": 0.55,
-      "radius": 0.06,
-      "editType": "flip"
-    },
-    {
-      "x": 0.778,
-      "y": 0.167,
-      "radius": 0.065,
+      "x": 0.62,
+      "y": 0.507,
+      "radius": 0.037,
       "editType": "resize"
     },
     {
-      "x": 0.133,
-      "y": 0.45,
-      "radius": 0.03,
+      "x": 0.787,
+      "y": 0.9,
+      "radius": 0.05,
+      "editType": "flip"
+    },
+    {
+      "x": 0.889,
+      "y": 0.139,
+      "radius": 0.04,
       "editType": "duplicate"
     }
   ]
