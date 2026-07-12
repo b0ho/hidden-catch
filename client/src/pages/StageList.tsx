@@ -1,34 +1,27 @@
 import { Link, useParams } from 'react-router-dom';
 import { categories } from '../data/categories';
-import { getBestTime, isCleared } from '../lib/records';
+import { getBestTime } from '../lib/records';
 import { makeStageId } from '../lib/stagePaths';
 import { formatTime } from '../lib/time';
+import { NotFound } from './NotFound';
 
 export function StageList() {
   const { categoryId } = useParams<{ categoryId: string }>();
   const category = categories.find((c) => c.id === categoryId);
 
   if (!category) {
-    return (
-      <div className="arcade-sky flex min-h-screen items-center justify-center px-4">
-        <div className="ink-panel font-display rounded-2xl bg-cream p-6 text-center text-ink">
-          <p className="mb-4">존재하지 않는 테마입니다.</p>
-          <Link to="/" className="ink-btn inline-block rounded-full bg-mint px-4 py-2">
-            돌아가기
-          </Link>
-        </div>
-      </div>
-    );
+    return <NotFound message="존재하지 않는 테마입니다." />;
   }
 
-  const tiles = Array.from({ length: category.stageCount }, (_, i) => {
-    const order = i + 1;
-    const id = makeStageId(category.id, order);
-    const cleared = isCleared(id);
-    const prevCleared = order === 1 || isCleared(makeStageId(category.id, order - 1));
-    const best = cleared ? getBestTime(id) : null;
-    return { order, id, cleared, unlocked: prevCleared, best };
-  });
+  const bests = Array.from({ length: category.stageCount }, (_, i) =>
+    getBestTime(makeStageId(category.id, i + 1)),
+  );
+  const tiles = bests.map((best, i) => ({
+    order: i + 1,
+    cleared: best !== null,
+    unlocked: i === 0 || bests[i - 1] !== null,
+    best,
+  }));
 
   return (
     <div className="arcade-sky relative min-h-screen overflow-hidden px-4 py-8">

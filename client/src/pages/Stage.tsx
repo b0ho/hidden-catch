@@ -11,6 +11,7 @@ import { useStageLayout } from '../hooks/useStageLayout';
 import { useIsTouchDevice } from '../hooks/useIsTouchDevice';
 import { categories } from '../data/categories';
 import { categoryOriginalSrc, makeStageId, stageMetaSrc, stageModifiedSrc } from '../lib/stagePaths';
+import { NotFound } from './NotFound';
 import { formatTime } from '../lib/time';
 import { getBestTime, saveBestTime } from '../lib/records';
 import { isMuted, playClear, playFound, playHurry, playMiss, setMuted } from '../lib/sfx';
@@ -58,7 +59,7 @@ export function Stage() {
   const { direction, panelSize, rootRef, headerRef, gaugeRef } = useStageLayout(aspectRatio);
   const isRow = direction === 'row';
 
-  const { position, facing, isWalking, moveTo, setInput } = useCharacterMovement(undefined, {
+  const { position, facing, isWalking, moveTo, setInput, reset: resetCharacter } = useCharacterMovement(undefined, {
     aspectRatio,
     zoom: zoomLevel,
   });
@@ -168,6 +169,7 @@ export function Stage() {
     setZoomLevel(1);
     setBestTime(getBestTime(stageId));
     setIsNewRecord(false);
+    resetCharacter();
 
     fetch(stageMetaSrc(categoryId, orderNum))
       .then((res) => {
@@ -185,7 +187,7 @@ export function Stage() {
     img.onerror = () => setLoadError(true);
     img.src = categoryOriginalSrc(categoryId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categoryId, orderNum, validRoute, stageId]);
+  }, [categoryId, orderNum, validRoute, stageId, resetCharacter]);
 
   useEffect(() => {
     loadStage();
@@ -240,6 +242,8 @@ export function Stage() {
     setHintsLeft(HINT_COUNT);
     setHintTarget(null);
     setIsNewRecord(false);
+    setZoomLevel(1);
+    resetCharacter();
   }
 
   function toggleMuted() {
@@ -249,16 +253,7 @@ export function Stage() {
   }
 
   if (!validRoute || !categoryId || !category) {
-    return (
-      <div className="arcade-sky flex min-h-screen items-center justify-center px-4">
-        <div className="ink-panel font-display rounded-2xl bg-cream p-6 text-center text-ink">
-          <p className="mb-4">존재하지 않는 스테이지입니다.</p>
-          <Link to="/" className="ink-btn inline-block rounded-full bg-mint px-4 py-2">
-            돌아가기
-          </Link>
-        </div>
-      </div>
-    );
+    return <NotFound message="존재하지 않는 스테이지입니다." />;
   }
 
   const listHref = `/category/${categoryId}`;

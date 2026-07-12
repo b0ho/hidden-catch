@@ -105,5 +105,16 @@ export function useCharacterMovement(
     inputRef.current = { dx, dy };
   }, []);
 
-  return { position, facing, isWalking, moveTo, setInput };
+  /** Snaps the character back to its starting spot — for a new stage or a retry, so the
+   * player doesn't start already standing wherever the previous board left off. */
+  const reset = useCallback(() => {
+    targetRef.current = null;
+    inputRef.current = { dx: 0, dy: 0 };
+    positionRef.current = initial;
+    setPosition(initial);
+    setFacing('right');
+    setIsWalking(false);
+  }, [initial]);
+
+  return { position, facing, isWalking, moveTo, setInput, reset };
 }
