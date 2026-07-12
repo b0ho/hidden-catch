@@ -325,15 +325,6 @@ export function Stage() {
           ref={headerRef}
           className="flex shrink-0 flex-nowrap items-center justify-between gap-1 overflow-x-auto"
         >
-          <Link
-            to={listHref}
-            className="font-display ink-panel shrink-0 rounded-full bg-cream px-2 py-1 text-xs text-ink"
-          >
-            ◀
-          </Link>
-          <h1 className="font-display ink-text shrink-0 rounded-full bg-bubblegum px-3 py-1 text-sm text-white sm:text-lg">
-            {category.title} {orderNum}/{category.stageCount}
-          </h1>
           <span
             className={`font-display ink-panel shrink-0 rounded-full px-2 py-1 text-xs text-ink sm:text-sm ${
               isUrgent ? 'animate-hurry-blink bg-bubblegum text-white' : 'bg-cream'
@@ -362,13 +353,6 @@ export function Stage() {
           >
             🔍{hintsLeft}
           </button>
-          <button
-            onClick={toggleMuted}
-            aria-label={muted ? '소리 켜기' : '소리 끄기'}
-            className="ink-btn font-display shrink-0 rounded-full bg-cream px-2 py-1 text-xs text-ink sm:text-sm"
-          >
-            {muted ? '🔇' : '🔊'}
-          </button>
           {ready && !cleared && !failed ? (
             <button
               onClick={togglePaused}
@@ -382,8 +366,13 @@ export function Stage() {
 
         {ready ? (
           <div
-            className={`flex min-h-0 flex-1 items-center justify-center gap-2 sm:gap-3 ${
-              isRow ? 'flex-row' : 'flex-col'
+            className={`flex min-h-0 flex-1 items-center gap-2 sm:gap-3 ${
+              // Stack mode (mobile): pack panels against the header instead of centering them
+              // in the available height — a 3:2 photo stacked twice is often much shorter than
+              // a tall phone screen, and centering left an oversized gap above the first panel.
+              // Row mode (desktop): keep centering — a deliberate earlier fix for tall wide
+              // viewports where a thin top-aligned strip looked worse than a centered one.
+              isRow ? 'flex-row justify-center' : 'flex-col justify-start'
             }`}
           >
             <ImagePanel
@@ -401,7 +390,7 @@ export function Stage() {
               alt="다른 부분을 찾아 클릭하세요"
               label={
                 isTouchDevice
-                  ? '터치로 이동 · 조이스틱+찾기로 걷다 찾기'
+                  ? '터치로 이동 · 조이스틱+캐치로 걷다 찾기'
                   : '클릭으로 바로 찾기 · 방향키+Space로 걷다 찾기'
               }
               aspectRatio={aspectRatio}
@@ -463,7 +452,7 @@ export function Stage() {
             onClick={handleFind}
             className={`ink-btn font-display ${CONTROL_SIZE} rounded-full bg-mint text-lg text-ink`}
           >
-            찾기
+            캐치
           </button>
         </div>
       ) : null}
@@ -471,10 +460,19 @@ export function Stage() {
       {paused ? (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-ink/95 px-4">
           <div className="ink-panel w-full max-w-sm rounded-2xl bg-cream p-6 text-center">
-            <p className="font-display mb-6 text-3xl text-ink">⏸️ 일시정지</p>
+            <p className="font-display mb-1 text-3xl text-ink">⏸️ 일시정지</p>
+            <p className="font-display mb-6 text-sm text-ink/70">
+              {category.title} {orderNum}/{category.stageCount}
+            </p>
             <div className="flex flex-wrap justify-center gap-3">
+              <button
+                onClick={toggleMuted}
+                className="ink-btn font-display rounded-full bg-cream px-4 py-2 text-ink"
+              >
+                {muted ? '🔇 소리 켜기' : '🔊 소리 끄기'}
+              </button>
               <Link to={listHref} className="ink-btn font-display rounded-full bg-cream px-4 py-2 text-ink">
-                목록으로
+                ◀ 목록으로
               </Link>
               <button
                 onClick={togglePaused}
