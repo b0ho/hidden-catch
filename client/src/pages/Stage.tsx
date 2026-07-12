@@ -213,9 +213,14 @@ export function Stage() {
 
   const timeRatio = timeLeft / TIME_LIMIT_SECONDS;
   const barColor = timeLeft <= 30 ? 'bg-bubblegum' : timeLeft <= 90 ? 'bg-lemon' : 'bg-mint';
+  const isUrgent = timeLeft <= 30 && !cleared && !failed;
 
   return (
     <div ref={rootRef} className="arcade-sky relative flex h-screen flex-col overflow-hidden px-2 py-2">
+      {isUrgent ? (
+        <div className="animate-urgent-border pointer-events-none fixed inset-0 z-20" />
+      ) : null}
+
       {missMarker ? (
         <div
           key={missMarker.nonce}
@@ -239,7 +244,7 @@ export function Stage() {
           </h1>
           <span
             className={`font-display ink-panel shrink-0 rounded-full px-2 py-1 text-xs text-ink sm:text-sm ${
-              timeLeft <= 30 ? 'bg-bubblegum text-white' : 'bg-cream'
+              isUrgent ? 'animate-hurry-blink bg-bubblegum text-white' : 'bg-cream'
             }`}
           >
             ⏱️{formatTime(timeLeft)}
