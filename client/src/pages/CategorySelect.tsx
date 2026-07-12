@@ -23,14 +23,16 @@ export function CategorySelect() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
+        {/* flex-wrap instead of a grid: with 5 categories a 3-col grid leaves an
+            unbalanced, left-hugging final row — wrapping flex items center it instead. */}
+        <div className="flex flex-wrap justify-center gap-8">
           {categories.map((category) => {
             const cleared = countClearedInCategory(category.id, category.stageCount);
             return (
               <Link
                 key={category.id}
                 to={`/category/${category.id}`}
-                className="ink-panel group relative block rounded-2xl bg-cream p-3 pb-4 transition-transform duration-150 hover:-translate-y-1 active:translate-y-0"
+                className="ink-panel group relative block w-full max-w-xs shrink-0 rounded-2xl bg-cream p-3 pb-4 transition-transform duration-150 hover:-translate-y-1 active:translate-y-0 sm:w-72"
               >
                 <div className="ink-panel font-display absolute right-1 top-1 z-10 rounded-full bg-lemon px-2 py-0.5 text-xs text-ink">
                   {cleared}/{category.stageCount}
