@@ -146,11 +146,13 @@ export function Stage() {
     setHintTarget({ x: pick.diff.x, y: pick.diff.y, radius: pick.diff.radius, nonce: Date.now() });
   }
 
+  // Paused with a hint on screen: hold off the dismiss timer too, otherwise the real-world
+  // clock keeps running behind the pause overlay and the hint can expire before it's ever seen.
   useEffect(() => {
-    if (!hintTarget) return;
+    if (!hintTarget || paused) return;
     const id = window.setTimeout(() => setHintTarget(null), HINT_DISPLAY_MS);
     return () => window.clearTimeout(id);
-  }, [hintTarget]);
+  }, [hintTarget, paused]);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -382,6 +384,7 @@ export function Stage() {
               aspectRatio={aspectRatio}
               zoom={zoomLevel}
               characterPosition={position}
+              hintTarget={hintTarget}
               fit={isRow ? 'height' : 'width'}
               computedSize={panelSize}
             />

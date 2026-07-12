@@ -68,20 +68,23 @@ export function ImagePanel({
 
   // While zoomed, keep the character centered in view as it walks — both panels take the
   // same characterPosition, so the original and modified photos stay scrolled to the same
-  // region even though each has its own independent scroll container.
+  // region even though each has its own independent scroll container. A hint takes priority
+  // over the character: without this, revealing a hint far from the character while zoomed in
+  // would ping a spot outside the current scroll position, so the player would never see it.
+  const cameraTarget = hintTarget ?? characterPosition;
   useEffect(() => {
-    if (!zoomed || !characterPosition || !containerRef.current) return;
+    if (!zoomed || !cameraTarget || !containerRef.current) return;
     const el = containerRef.current;
     const rect = el.getBoundingClientRect();
     if (rect.width === 0 || rect.height === 0) return;
     const contentWidth = rect.width * zoom;
     const contentHeight = rect.height * zoom;
-    const targetLeft = characterPosition.x * contentWidth - rect.width / 2;
-    const targetTop = characterPosition.y * contentHeight - rect.height / 2;
+    const targetLeft = cameraTarget.x * contentWidth - rect.width / 2;
+    const targetTop = cameraTarget.y * contentHeight - rect.height / 2;
     el.scrollLeft = Math.max(0, Math.min(contentWidth - rect.width, targetLeft));
     el.scrollTop = Math.max(0, Math.min(contentHeight - rect.height, targetTop));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [zoomed, zoom, characterPosition?.x, characterPosition?.y]);
+  }, [zoomed, zoom, cameraTarget?.x, cameraTarget?.y]);
 
   function handleClick(event: React.MouseEvent<HTMLDivElement>) {
     if (!interactive || !onPanelClick || !containerRef.current) return;
