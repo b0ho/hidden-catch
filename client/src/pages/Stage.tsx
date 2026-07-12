@@ -51,6 +51,7 @@ export function Stage() {
   const [bestTime, setBestTime] = useState<number | null>(null);
   const [isNewRecord, setIsNewRecord] = useState(false);
   const [muted, setMutedState] = useState(() => isMuted());
+  const [paused, setPaused] = useState(false);
   const isTouchDevice = useIsTouchDevice();
   const ready = meta !== null && imageLoaded && !loadError;
 
@@ -64,7 +65,7 @@ export function Stage() {
     aspectRatio,
     zoom: zoomLevel,
   });
-  useKeyboardInput(setInput);
+  useKeyboardInput(setInput, !paused);
 
   // Refs so the space-bar listener (registered once) always reads the latest
   // stage data and character position without needing to re-subscribe every frame.
@@ -80,6 +81,8 @@ export function Stage() {
   zoomRef.current = zoomLevel;
   const readyRef = useRef(ready);
   readyRef.current = ready;
+  const pausedRef = useRef(paused);
+  pausedRef.current = paused;
 
   /** Checks a point against undiscovered diffs and marks any hit as found. Returns whether
    * a new diff was found — callers use this to apply the miss penalty. This is the only way
@@ -120,7 +123,7 @@ export function Stage() {
   }
 
   function attemptFind(xFrac: number, yFrac: number) {
-    if (!readyRef.current || failedRef.current || clearedRef.current) return;
+    if (!readyRef.current || pausedRef.current || failedRef.current || clearedRef.current) return;
     if (!checkHit(xFrac, yFrac)) applyMissPenalty(xFrac, yFrac);
   }
 
@@ -131,7 +134,7 @@ export function Stage() {
   /** Reveals one random undiscovered diff with a ping animation — doesn't move the
    * character or count as a find, just shows where to go. Limited to HINT_COUNT per stage. */
   function handleHint() {
-    if (hintsLeft <= 0 || failedRef.current || clearedRef.current) return;
+    if (hintsLeft <= 0 || pausedRef.current || failedRef.current || clearedRef.current) return;
     const currentMeta = metaRef.current;
     if (!currentMeta) return;
     const undiscovered = currentMeta.diffs
@@ -174,6 +177,7 @@ export function Stage() {
     setZoomLevel(1);
     setBestTime(getBestTime(stageId));
     setIsNewRecord(false);
+    setPaused(false);
     resetCharacter();
 
     fetch(stageMetaSrc(categoryId, orderNum))
@@ -207,9 +211,10 @@ export function Stage() {
   const isUrgent = timeLeft <= 30 && !cleared && !failed;
 
   // Countdown ticks once per second while the stage is still in play — held off until the
-  // stage data/image has actually loaded, otherwise time drains during the loading screen.
+  // stage data/image has actually loaded (otherwise time drains during the loading screen)
+  // and while paused, so the player can step away without being punished for it.
   useEffect(() => {
-    if (!ready || cleared || failed) return;
+    if (!ready || cleared || failed || paused) return;
     const id = window.setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
@@ -220,7 +225,7 @@ export function Stage() {
       });
     }, 1000);
     return () => window.clearInterval(id);
-  }, [ready, cleared, failed, stageId]);
+  }, [ready, cleared, failed, paused, stageId]);
 
   // Fires once when a stage is cleared: records a new best time (if any) and plays the fanfare.
   useEffect(() => {
@@ -249,6 +254,7 @@ export function Stage() {
     setHintTarget(null);
     setIsNewRecord(false);
     setZoomLevel(1);
+    setPaused(false);
     resetCharacter();
   }
 
@@ -256,6 +262,10 @@ export function Stage() {
     const next = !muted;
     setMuted(next);
     setMutedState(next);
+  }
+
+  function togglePaused() {
+    setPaused((p) => !p);
   }
 
   if (!validRoute || !categoryId || !category) {
@@ -359,6 +369,15 @@ export function Stage() {
           >
             {muted ? '🔇' : '🔊'}
           </button>
+          {ready && !cleared && !failed ? (
+            <button
+              onClick={togglePaused}
+              aria-label="일시정지"
+              className="ink-btn font-display shrink-0 rounded-full bg-cream px-2 py-1 text-xs text-ink sm:text-sm"
+            >
+              ⏸️
+            </button>
+          ) : null}
         </header>
 
         {ready ? (
@@ -419,13 +438,13 @@ export function Stage() {
         </div>
       </div>
 
-      {isTouchDevice && !cleared && !failed ? (
+      {isTouchDevice && !cleared && !failed && !paused ? (
         <div className="fixed left-2 z-10" style={CONTROL_BOTTOM_STYLE}>
           <VirtualJoystick onChange={setInput} />
         </div>
       ) : null}
 
-      {isTouchDevice && !cleared && !failed ? (
+      {isTouchDevice && !cleared && !failed && !paused ? (
         <div className="fixed left-1/2 z-10 -translate-x-1/2" style={CONTROL_BOTTOM_STYLE}>
           <button
             onClick={() => setZoomLevel((z) => ZOOM_LEVELS[(ZOOM_LEVELS.indexOf(z) + 1) % ZOOM_LEVELS.length])}
@@ -438,7 +457,7 @@ export function Stage() {
         </div>
       ) : null}
 
-      {isTouchDevice && !cleared && !failed ? (
+      {isTouchDevice && !cleared && !failed && !paused ? (
         <div className="fixed right-2 z-10" style={CONTROL_BOTTOM_STYLE}>
           <button
             onClick={handleFind}
@@ -446,6 +465,25 @@ export function Stage() {
           >
             찾기
           </button>
+        </div>
+      ) : null}
+
+      {paused ? (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-ink/95 px-4">
+          <div className="ink-panel w-full max-w-sm rounded-2xl bg-cream p-6 text-center">
+            <p className="font-display mb-6 text-3xl text-ink">⏸️ 일시정지</p>
+            <div className="flex flex-wrap justify-center gap-3">
+              <Link to={listHref} className="ink-btn font-display rounded-full bg-cream px-4 py-2 text-ink">
+                목록으로
+              </Link>
+              <button
+                onClick={togglePaused}
+                className="ink-btn font-display rounded-full bg-mint px-4 py-2 text-ink"
+              >
+                ▶️ 재개
+              </button>
+            </div>
+          </div>
         </div>
       ) : null}
 
