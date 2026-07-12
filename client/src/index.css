@@ -248,3 +248,20 @@ body {
 .animate-hurry-blink {
   animation: hurry-blink 0.7s ease-in-out infinite;
 }
+
+@keyframes confetti-fall {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--confetti-drift), 420px) rotate(var(--confetti-rotate));
+    opacity: 0;
+  }
+}
+
+.animate-confetti-fall {
+  animation-name: confetti-fall;
+  animation-timing-function: ease-in;
+  animation-fill-mode: forwards;
+}

@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import type { StageMeta } from '@shared/types';
 import { ImagePanel, type HintTarget, type MissMarker } from '../game/ImagePanel';
+import { Confetti } from '../game/Confetti';
 import { useCharacterMovement } from '../game/useCharacterMovement';
 import { useKeyboardInput } from '../game/useKeyboardInput';
 import { VirtualJoystick } from '../game/VirtualJoystick';
@@ -9,6 +10,9 @@ import { hitTest } from '../game/hitTest';
 import { useStageLayout } from '../hooks/useStageLayout';
 import { useIsTouchDevice } from '../hooks/useIsTouchDevice';
 import { stages } from '../data/stages';
+import { formatTime } from '../lib/time';
+import { getBestTime, saveBestTime } from '../lib/records';
+import { isMuted, playClear, playFound, playHurry, playMiss, setMuted } from '../lib/sfx';
 
 const TIME_LIMIT_SECONDS = 180;
 const MISS_PENALTY_SECONDS = 5;
@@ -18,12 +22,6 @@ const ZOOM_LEVELS = [1, 2, 4];
 /** Shared size + bottom offset for the joystick/찾기/확대 controls so they line up in one row. */
 const CONTROL_SIZE = 'h-16 w-16';
 const CONTROL_BOTTOM_STYLE = { bottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.375rem)' };
-
-function formatTime(seconds: number) {
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `${m}:${s.toString().padStart(2, '0')}`;
-}
 
 export function Stage() {
   const { stageId } = useParams<{ stageId: string }>();
@@ -40,7 +38,13 @@ export function Stage() {
   const [hintsLeft, setHintsLeft] = useState(HINT_COUNT);
   const [hintTarget, setHintTarget] = useState<HintTarget | null>(null);
   const [zoomLevel, setZoomLevel] = useState(1);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const [bestTime, setBestTime] = useState<number | null>(null);
+  const [isNewRecord, setIsNewRecord] = useState(false);
+  const [muted, setMutedState] = useState(() => isMuted());
   const isTouchDevice = useIsTouchDevice();
+  const ready = meta !== null && imageLoaded && !loadError;
 
   // Measures the actual visible area (root minus header/gauge bar) and picks whichever
   // arrangement — side by side or stacked — renders the photos bigger, recomputing on any
@@ -68,6 +72,8 @@ export function Stage() {
   aspectRatioRef.current = aspectRatio;
   const zoomRef = useRef(zoomLevel);
   zoomRef.current = zoomLevel;
+  const readyRef = useRef(ready);
+  readyRef.current = ready;
 
   /** Checks a point against undiscovered diffs and marks any hit as found. Returns whether
    * a new diff was found — callers use this to apply the miss penalty. This is the only way
@@ -89,10 +95,12 @@ export function Stage() {
         setFoundIndices((prev) => (prev.has(index) ? prev : new Set(prev).add(index)));
       }
     });
+    if (foundNew) playFound();
     return foundNew;
   }
 
   function applyMissPenalty(xFrac: number, yFrac: number) {
+    playMiss();
     setTimeLeft((prev) => {
       const next = Math.max(0, prev - MISS_PENALTY_SECONDS);
       if (next === 0) setFailed(true);
@@ -102,7 +110,7 @@ export function Stage() {
   }
 
   function attemptFind(xFrac: number, yFrac: number) {
-    if (failedRef.current || clearedRef.current) return;
+    if (!readyRef.current || failedRef.current || clearedRef.current) return;
     if (!checkHit(xFrac, yFrac)) applyMissPenalty(xFrac, yFrac);
   }
 
@@ -142,9 +150,11 @@ export function Stage() {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
 
-  useEffect(() => {
+  const loadStage = useCallback(() => {
     if (!stageId) return;
     setMeta(null);
+    setImageLoaded(false);
+    setLoadError(false);
     setFoundIndices(new Set());
     setTimeLeft(TIME_LIMIT_SECONDS);
     setFailed(false);
@@ -152,15 +162,29 @@ export function Stage() {
     setHintsLeft(HINT_COUNT);
     setHintTarget(null);
     setZoomLevel(1);
+    setBestTime(getBestTime(stageId));
+    setIsNewRecord(false);
 
     fetch(`/stages/${stageId}/meta.json`)
-      .then((res) => res.json())
-      .then((data: StageMeta) => setMeta(data));
+      .then((res) => {
+        if (!res.ok) throw new Error(`Failed to load stage meta: ${res.status}`);
+        return res.json();
+      })
+      .then((data: StageMeta) => setMeta(data))
+      .catch(() => setLoadError(true));
 
     const img = new Image();
-    img.onload = () => setAspectRatio(img.naturalWidth / img.naturalHeight);
+    img.onload = () => {
+      setAspectRatio(img.naturalWidth / img.naturalHeight);
+      setImageLoaded(true);
+    };
+    img.onerror = () => setLoadError(true);
     img.src = `/stages/${stageId}/original.jpg`;
   }, [stageId]);
+
+  useEffect(() => {
+    loadStage();
+  }, [loadStage]);
 
   const total = meta?.diffs.length ?? 5;
   const cleared = meta !== null && foundIndices.size === total;
@@ -168,10 +192,12 @@ export function Stage() {
   clearedRef.current = cleared;
   const failedRef = useRef(failed);
   failedRef.current = failed;
+  const isUrgent = timeLeft <= 30 && !cleared && !failed;
 
-  // Countdown ticks once per second while the stage is still in play.
+  // Countdown ticks once per second while the stage is still in play — held off until the
+  // stage data/image has actually loaded, otherwise time drains during the loading screen.
   useEffect(() => {
-    if (cleared || failed) return;
+    if (!ready || cleared || failed) return;
     const id = window.setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
@@ -182,7 +208,24 @@ export function Stage() {
       });
     }, 1000);
     return () => window.clearInterval(id);
-  }, [cleared, failed, stageId]);
+  }, [ready, cleared, failed, stageId]);
+
+  // Fires once when a stage is cleared: records a new best time (if any) and plays the fanfare.
+  useEffect(() => {
+    if (!cleared || !stageId) return;
+    playClear();
+    if (saveBestTime(stageId, timeLeft)) {
+      setBestTime(timeLeft);
+      setIsNewRecord(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cleared]);
+
+  // Fires once when time first drops into the "hurry" zone.
+  useEffect(() => {
+    if (isUrgent) playHurry();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isUrgent]);
 
   function handleRetry() {
     setFoundIndices(new Set());
@@ -191,6 +234,13 @@ export function Stage() {
     setMissMarker(null);
     setHintsLeft(HINT_COUNT);
     setHintTarget(null);
+    setIsNewRecord(false);
+  }
+
+  function toggleMuted() {
+    const next = !muted;
+    setMuted(next);
+    setMutedState(next);
   }
 
   if (!stageId || !stageInfo) {
@@ -206,6 +256,30 @@ export function Stage() {
     );
   }
 
+  if (loadError) {
+    return (
+      <div className="arcade-sky flex min-h-screen items-center justify-center px-4">
+        <div className="ink-panel font-display rounded-2xl bg-cream p-6 text-center text-ink">
+          <p className="mb-4">스테이지를 불러오지 못했습니다.
+            <br />
+            네트워크 상태를 확인한 뒤 다시 시도해주세요.
+          </p>
+          <div className="flex justify-center gap-3">
+            <Link to="/" className="ink-btn inline-block rounded-full bg-cream px-4 py-2">
+              목록으로
+            </Link>
+            <button onClick={loadStage} className="ink-btn inline-block rounded-full bg-mint px-4 py-2">
+              다시 시도
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const stageIndex = stages.findIndex((s) => s.id === stageId);
+  const nextStage = stageIndex >= 0 ? stages[stageIndex + 1] : undefined;
+
   function handlePanelClick(xFrac: number, yFrac: number) {
     moveTo(xFrac, yFrac);
     attemptFind(xFrac, yFrac);
@@ -213,7 +287,6 @@ export function Stage() {
 
   const timeRatio = timeLeft / TIME_LIMIT_SECONDS;
   const barColor = timeLeft <= 30 ? 'bg-bubblegum' : timeLeft <= 90 ? 'bg-lemon' : 'bg-mint';
-  const isUrgent = timeLeft <= 30 && !cleared && !failed;
 
   return (
     <div ref={rootRef} className="arcade-sky relative flex h-screen flex-col overflow-hidden px-2 py-2">
@@ -270,46 +343,62 @@ export function Stage() {
           >
             🔍{hintsLeft}
           </button>
+          <button
+            onClick={toggleMuted}
+            aria-label={muted ? '소리 켜기' : '소리 끄기'}
+            className="ink-btn font-display shrink-0 rounded-full bg-cream px-2 py-1 text-xs text-ink sm:text-sm"
+          >
+            {muted ? '🔇' : '🔊'}
+          </button>
         </header>
 
-        <div
-          className={`flex min-h-0 flex-1 items-center justify-center gap-2 sm:gap-3 ${
-            isRow ? 'flex-row' : 'flex-col'
-          }`}
-        >
-          <ImagePanel
-            src={`/stages/${stageId}/original.jpg`}
-            alt="원본 그림"
-            label="원본"
-            aspectRatio={aspectRatio}
-            zoom={zoomLevel}
-            characterPosition={position}
-            fit={isRow ? 'height' : 'width'}
-            computedSize={panelSize}
-          />
-          <ImagePanel
-            src={`/stages/${stageId}/modified.jpg`}
-            alt="다른 부분을 찾아 클릭하세요"
-            label={
-              isTouchDevice
-                ? '터치로 이동 · 조이스틱+찾기로 걷다 찾기'
-                : '클릭으로 바로 찾기 · 방향키+Space로 걷다 찾기'
-            }
-            aspectRatio={aspectRatio}
-            interactive
-            diffs={meta?.diffs}
-            foundIndices={foundIndices}
-            characterPosition={position}
-            characterFacing={facing}
-            characterWalking={isWalking}
-            missMarker={missMarker}
-            hintTarget={hintTarget}
-            zoom={zoomLevel}
-            fit={isRow ? 'height' : 'width'}
-            computedSize={panelSize}
-            onPanelClick={handlePanelClick}
-          />
-        </div>
+        {ready ? (
+          <div
+            className={`flex min-h-0 flex-1 items-center justify-center gap-2 sm:gap-3 ${
+              isRow ? 'flex-row' : 'flex-col'
+            }`}
+          >
+            <ImagePanel
+              src={`/stages/${stageId}/original.jpg`}
+              alt="원본 그림"
+              label="원본"
+              aspectRatio={aspectRatio}
+              zoom={zoomLevel}
+              characterPosition={position}
+              fit={isRow ? 'height' : 'width'}
+              computedSize={panelSize}
+            />
+            <ImagePanel
+              src={`/stages/${stageId}/modified.jpg`}
+              alt="다른 부분을 찾아 클릭하세요"
+              label={
+                isTouchDevice
+                  ? '터치로 이동 · 조이스틱+찾기로 걷다 찾기'
+                  : '클릭으로 바로 찾기 · 방향키+Space로 걷다 찾기'
+              }
+              aspectRatio={aspectRatio}
+              interactive
+              diffs={meta?.diffs}
+              foundIndices={foundIndices}
+              characterPosition={position}
+              characterFacing={facing}
+              characterWalking={isWalking}
+              missMarker={missMarker}
+              hintTarget={hintTarget}
+              zoom={zoomLevel}
+              fit={isRow ? 'height' : 'width'}
+              computedSize={panelSize}
+              onPanelClick={handlePanelClick}
+            />
+          </div>
+        ) : (
+          <div className="flex min-h-0 flex-1 items-center justify-center">
+            <div className="ink-panel font-display rounded-2xl bg-cream px-6 py-8 text-center text-ink">
+              <div className="mx-auto mb-3 h-10 w-10 animate-spin rounded-full border-4 border-ink/20 border-t-ink" />
+              불러오는 중...
+            </div>
+          </div>
+        )}
       </div>
 
       <div ref={gaugeRef} className="relative z-10 mx-auto mt-1 w-full max-w-[1600px] shrink-0 px-1">
@@ -353,10 +442,20 @@ export function Stage() {
 
       {cleared ? (
         <div className="fixed inset-0 z-30 flex items-center justify-center bg-ink/60 px-4">
-          <div className="ink-panel w-full max-w-sm rounded-2xl bg-cream p-6 text-center">
+          <Confetti />
+          <div className="ink-panel relative w-full max-w-sm rounded-2xl bg-cream p-6 text-center">
             <p className="font-display mb-1 text-3xl text-ink">🎉 클리어!</p>
-            <p className="mb-6 text-ink/70">모든 다른 부분을 찾았습니다. (남은 시간 {formatTime(timeLeft)})</p>
-            <div className="flex justify-center gap-3">
+            <p className="mb-2 text-ink/70">모든 다른 부분을 찾았습니다. (남은 시간 {formatTime(timeLeft)})</p>
+            {bestTime !== null ? (
+              <p
+                className={`font-display mb-6 text-sm ${isNewRecord ? 'text-bubblegum-deep' : 'text-ink/70'}`}
+              >
+                {isNewRecord ? `🏆 신기록! (${formatTime(bestTime)})` : `🏆 최고기록 ${formatTime(bestTime)}`}
+              </p>
+            ) : (
+              <div className="mb-6" />
+            )}
+            <div className="flex flex-wrap justify-center gap-3">
               <Link to="/" className="ink-btn font-display rounded-full bg-cream px-4 py-2 text-ink">
                 목록으로
               </Link>
@@ -366,6 +465,14 @@ export function Stage() {
               >
                 다시 플레이
               </button>
+              {nextStage ? (
+                <Link
+                  to={`/stage/${nextStage.id}`}
+                  className="ink-btn font-display rounded-full bg-lemon px-4 py-2 text-ink"
+                >
+                  다음 스테이지 ▶
+                </Link>
+              ) : null}
             </div>
           </div>
         </div>
