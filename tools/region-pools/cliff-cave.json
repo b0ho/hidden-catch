@@ -1,0 +1,14 @@
+[
+  { "x": 0.185, "y": 0.332, "radius": 0.025, "editType": "objectRemove", "cloneOffset": { "dx": 1.2, "dy": 0 } },
+  { "x": 0.324, "y": 0.353, "radius": 0.03, "editType": "colorChange" },
+  { "x": 0.153, "y": 0.408, "radius": 0.02, "editType": "objectRemove", "cloneOffset": { "dx": -1.2, "dy": 0 } },
+  { "x": 0.014, "y": 0.360, "radius": 0.02, "editType": "colorChange" },
+  { "x": 0.301, "y": 0.457, "radius": 0.025, "editType": "objectRemove", "cloneOffset": { "dx": 1.2, "dy": 0.3 } },
+  { "x": 0.496, "y": 0.862, "radius": 0.025, "editType": "resize" },
+  { "x": 0.55, "y": 0.60, "radius": 0.03, "editType": "colorChange" },
+  { "x": 0.672, "y": 0.675, "radius": 0.025, "editType": "objectRemove", "cloneOffset": { "dx": 0.8, "dy": -0.8 } },
+  { "x": 0.820, "y": 0.028, "radius": 0.025, "editType": "objectRemove", "cloneOffset": { "dx": 1.2, "dy": 0 } },
+  { "x": 0.958, "y": 0.257, "radius": 0.02, "editType": "objectRemove", "cloneOffset": { "dx": 0, "dy": -1.2 } },
+  { "x": 0.30, "y": 0.15, "radius": 0.03, "editType": "flip" },
+  { "x": 0.45, "y": 0.30, "radius": 0.03, "editType": "duplicate", "cloneOffset": { "dx": -1.2, "dy": 0.2 } }
+]

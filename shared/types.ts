@@ -17,9 +17,3 @@ export interface StageMeta {
   id: string;
   diffs: DiffRegion[];
 }
-
-export interface StageSummary {
-  id: string;
-  title: string;
-  thumbnail: string;
-}

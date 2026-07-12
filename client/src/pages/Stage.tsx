@@ -9,7 +9,8 @@ import { VirtualJoystick } from '../game/VirtualJoystick';
 import { hitTest } from '../game/hitTest';
 import { useStageLayout } from '../hooks/useStageLayout';
 import { useIsTouchDevice } from '../hooks/useIsTouchDevice';
-import { stages } from '../data/stages';
+import { categories } from '../data/categories';
+import { categoryOriginalSrc, makeStageId, stageMetaSrc, stageModifiedSrc } from '../lib/stagePaths';
 import { formatTime } from '../lib/time';
 import { getBestTime, saveBestTime } from '../lib/records';
 import { isMuted, playClear, playFound, playHurry, playMiss, setMuted } from '../lib/sfx';
@@ -24,7 +25,12 @@ const CONTROL_SIZE = 'h-16 w-16';
 const CONTROL_BOTTOM_STYLE = { bottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.375rem)' };
 
 export function Stage() {
-  const { stageId } = useParams<{ stageId: string }>();
+  const { categoryId, order } = useParams<{ categoryId: string; order: string }>();
+  const orderNum = Number(order);
+  const category = categories.find((c) => c.id === categoryId);
+  const validRoute = !!categoryId && !!category && Number.isInteger(orderNum) && orderNum >= 1 && orderNum <= category.stageCount;
+  const stageId = categoryId && validRoute ? makeStageId(categoryId, orderNum) : undefined;
+
   const [meta, setMeta] = useState<StageMeta | null>(null);
   const [aspectRatio, setAspectRatio] = useState(3 / 2);
   const [foundIndices, setFoundIndices] = useState<Set<number>>(new Set());
@@ -57,8 +63,6 @@ export function Stage() {
     zoom: zoomLevel,
   });
   useKeyboardInput(setInput);
-
-  const stageInfo = stages.find((s) => s.id === stageId);
 
   // Refs so the space-bar listener (registered once) always reads the latest
   // stage data and character position without needing to re-subscribe every frame.
@@ -151,7 +155,7 @@ export function Stage() {
   }, []);
 
   const loadStage = useCallback(() => {
-    if (!stageId) return;
+    if (!categoryId || !validRoute || !stageId) return;
     setMeta(null);
     setImageLoaded(false);
     setLoadError(false);
@@ -165,7 +169,7 @@ export function Stage() {
     setBestTime(getBestTime(stageId));
     setIsNewRecord(false);
 
-    fetch(`/stages/${stageId}/meta.json`)
+    fetch(stageMetaSrc(categoryId, orderNum))
       .then((res) => {
         if (!res.ok) throw new Error(`Failed to load stage meta: ${res.status}`);
         return res.json();
@@ -179,8 +183,9 @@ export function Stage() {
       setImageLoaded(true);
     };
     img.onerror = () => setLoadError(true);
-    img.src = `/stages/${stageId}/original.jpg`;
-  }, [stageId]);
+    img.src = categoryOriginalSrc(categoryId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [categoryId, orderNum, validRoute, stageId]);
 
   useEffect(() => {
     loadStage();
@@ -243,7 +248,7 @@ export function Stage() {
     setMutedState(next);
   }
 
-  if (!stageId || !stageInfo) {
+  if (!validRoute || !categoryId || !category) {
     return (
       <div className="arcade-sky flex min-h-screen items-center justify-center px-4">
         <div className="ink-panel font-display rounded-2xl bg-cream p-6 text-center text-ink">
@@ -256,16 +261,19 @@ export function Stage() {
     );
   }
 
+  const listHref = `/category/${categoryId}`;
+
   if (loadError) {
     return (
       <div className="arcade-sky flex min-h-screen items-center justify-center px-4">
         <div className="ink-panel font-display rounded-2xl bg-cream p-6 text-center text-ink">
-          <p className="mb-4">스테이지를 불러오지 못했습니다.
+          <p className="mb-4">
+            스테이지를 불러오지 못했습니다.
             <br />
             네트워크 상태를 확인한 뒤 다시 시도해주세요.
           </p>
           <div className="flex justify-center gap-3">
-            <Link to="/" className="ink-btn inline-block rounded-full bg-cream px-4 py-2">
+            <Link to={listHref} className="ink-btn inline-block rounded-full bg-cream px-4 py-2">
               목록으로
             </Link>
             <button onClick={loadStage} className="ink-btn inline-block rounded-full bg-mint px-4 py-2">
@@ -277,8 +285,8 @@ export function Stage() {
     );
   }
 
-  const stageIndex = stages.findIndex((s) => s.id === stageId);
-  const nextStage = stageIndex >= 0 ? stages[stageIndex + 1] : undefined;
+  const nextOrder = orderNum + 1;
+  const hasNextStage = nextOrder <= category.stageCount;
 
   function handlePanelClick(xFrac: number, yFrac: number) {
     moveTo(xFrac, yFrac);
@@ -307,13 +315,13 @@ export function Stage() {
           className="flex shrink-0 flex-nowrap items-center justify-between gap-1 overflow-x-auto"
         >
           <Link
-            to="/"
+            to={listHref}
             className="font-display ink-panel shrink-0 rounded-full bg-cream px-2 py-1 text-xs text-ink"
           >
             ◀
           </Link>
           <h1 className="font-display ink-text shrink-0 rounded-full bg-bubblegum px-3 py-1 text-sm text-white sm:text-lg">
-            {stageInfo.title}
+            {category.title} {orderNum}/{category.stageCount}
           </h1>
           <span
             className={`font-display ink-panel shrink-0 rounded-full px-2 py-1 text-xs text-ink sm:text-sm ${
@@ -359,7 +367,7 @@ export function Stage() {
             }`}
           >
             <ImagePanel
-              src={`/stages/${stageId}/original.jpg`}
+              src={categoryOriginalSrc(categoryId)}
               alt="원본 그림"
               label="원본"
               aspectRatio={aspectRatio}
@@ -369,7 +377,7 @@ export function Stage() {
               computedSize={panelSize}
             />
             <ImagePanel
-              src={`/stages/${stageId}/modified.jpg`}
+              src={stageModifiedSrc(categoryId, orderNum)}
               alt="다른 부분을 찾아 클릭하세요"
               label={
                 isTouchDevice
@@ -447,27 +455,22 @@ export function Stage() {
             <p className="font-display mb-1 text-3xl text-ink">🎉 클리어!</p>
             <p className="mb-2 text-ink/70">모든 다른 부분을 찾았습니다. (남은 시간 {formatTime(timeLeft)})</p>
             {bestTime !== null ? (
-              <p
-                className={`font-display mb-6 text-sm ${isNewRecord ? 'text-bubblegum-deep' : 'text-ink/70'}`}
-              >
+              <p className={`font-display mb-6 text-sm ${isNewRecord ? 'text-bubblegum-deep' : 'text-ink/70'}`}>
                 {isNewRecord ? `🏆 신기록! (${formatTime(bestTime)})` : `🏆 최고기록 ${formatTime(bestTime)}`}
               </p>
             ) : (
               <div className="mb-6" />
             )}
             <div className="flex flex-wrap justify-center gap-3">
-              <Link to="/" className="ink-btn font-display rounded-full bg-cream px-4 py-2 text-ink">
+              <Link to={listHref} className="ink-btn font-display rounded-full bg-cream px-4 py-2 text-ink">
                 목록으로
               </Link>
-              <button
-                onClick={handleRetry}
-                className="ink-btn font-display rounded-full bg-mint px-4 py-2 text-ink"
-              >
+              <button onClick={handleRetry} className="ink-btn font-display rounded-full bg-mint px-4 py-2 text-ink">
                 다시 플레이
               </button>
-              {nextStage ? (
+              {hasNextStage ? (
                 <Link
-                  to={`/stage/${nextStage.id}`}
+                  to={`/stage/${categoryId}/${nextOrder}`}
                   className="ink-btn font-display rounded-full bg-lemon px-4 py-2 text-ink"
                 >
                   다음 스테이지 ▶
@@ -486,7 +489,7 @@ export function Stage() {
               시간 안에 다 찾지 못했습니다 ({foundIndices.size} / {total}). 다시 도전해보세요.
             </p>
             <div className="flex justify-center gap-3">
-              <Link to="/" className="ink-btn font-display rounded-full bg-cream px-4 py-2 text-ink">
+              <Link to={listHref} className="ink-btn font-display rounded-full bg-cream px-4 py-2 text-ink">
                 목록으로
               </Link>
               <button

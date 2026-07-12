@@ -4,7 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "generate-stage": "tsx generate-stage.ts"
+    "generate-stage": "tsx generate-stage.ts",
+    "generate-category-stages": "tsx generate-category-stages.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.0",

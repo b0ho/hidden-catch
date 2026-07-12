@@ -23,3 +23,17 @@ export function saveBestTime(stageId: string, timeLeft: number): boolean {
   }
   return true;
 }
+
+/** A stage counts as cleared once it has any recorded best time. */
+export function isCleared(stageId: string): boolean {
+  return getBestTime(stageId) !== null;
+}
+
+/** How many of a category's stages (1..stageCount) have been cleared at least once. */
+export function countClearedInCategory(categoryId: string, stageCount: number): number {
+  let count = 0;
+  for (let order = 1; order <= stageCount; order += 1) {
+    if (isCleared(`${categoryId}-${String(order).padStart(2, '0')}`)) count += 1;
+  }
+  return count;
+}
