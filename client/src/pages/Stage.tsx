@@ -15,6 +15,7 @@ import { NotFound } from './NotFound';
 import { formatTime } from '../lib/time';
 import { getBestTime, saveBestTime } from '../lib/records';
 import { isMuted, playClear, playFound, playHurry, playMiss, setMuted } from '../lib/sfx';
+import { vibrateClear, vibrateFound, vibrateMiss } from '../lib/haptics';
 
 const TIME_LIMIT_SECONDS = 180;
 const MISS_PENALTY_SECONDS = 5;
@@ -100,12 +101,16 @@ export function Stage() {
         setFoundIndices((prev) => (prev.has(index) ? prev : new Set(prev).add(index)));
       }
     });
-    if (foundNew) playFound();
+    if (foundNew) {
+      playFound();
+      vibrateFound();
+    }
     return foundNew;
   }
 
   function applyMissPenalty(xFrac: number, yFrac: number) {
     playMiss();
+    vibrateMiss();
     setTimeLeft((prev) => {
       const next = Math.max(0, prev - MISS_PENALTY_SECONDS);
       if (next === 0) setFailed(true);
@@ -221,6 +226,7 @@ export function Stage() {
   useEffect(() => {
     if (!cleared || !stageId) return;
     playClear();
+    vibrateClear();
     if (saveBestTime(stageId, timeLeft)) {
       setBestTime(timeLeft);
       setIsNewRecord(true);

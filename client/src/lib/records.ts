@@ -1,3 +1,5 @@
+import { makeStageId } from './stagePaths';
+
 const STORAGE_PREFIX = 'hidden-catch:best:';
 
 /** Best remaining time at clear, in seconds (bigger = faster clear). */
@@ -33,7 +35,16 @@ export function isCleared(stageId: string): boolean {
 export function countClearedInCategory(categoryId: string, stageCount: number): number {
   let count = 0;
   for (let order = 1; order <= stageCount; order += 1) {
-    if (isCleared(`${categoryId}-${String(order).padStart(2, '0')}`)) count += 1;
+    if (isCleared(makeStageId(categoryId, order))) count += 1;
   }
   return count;
+}
+
+/** The first stage (1-indexed) in a category that hasn't been cleared yet — where "이어하기"
+ * should jump to. Returns null once every stage in the category is cleared. */
+export function firstUnclearedOrder(categoryId: string, stageCount: number): number | null {
+  for (let order = 1; order <= stageCount; order += 1) {
+    if (!isCleared(makeStageId(categoryId, order))) return order;
+  }
+  return null;
 }
